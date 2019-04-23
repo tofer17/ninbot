@@ -3,8 +3,50 @@
 <head>
 <meta charset="UTF-8">
 <title>Ninbot</title>
+<link rel="icon" href="favicon.png" type="image/png" sizes="32x32" />
+<link rel="stylesheet" href="index.css" type="text/css" />
+<script src="index.js"></script>
 </head>
 <body>
-
+	<h1>Ninbot</h1>
+	<div id="ninbot">
+		<div id="left">
+			<table id="hud">
+				<tr>
+					<td><img src="life.png"></td>
+					<td id="lives">-</td>
+				</tr>
+				<tr>
+					<td>Level</td>
+					<td id="level">-</td>
+				</tr>
+				<tr>
+					<td><img src="enemy.png"></td>
+					<td id="enemies">-</td>
+				</tr>
+				<tr>
+					<td>Score</td>
+					<td id="score">-</td>
+				</tr>
+				<tr>
+					<td><img src="buff.png"></td>
+					<td id="attacks">-</td>
+				</tr>
+				<tr>
+					<td>Mana</td>
+					<td><progress id="mana" max="100" value="35"></progress></td>
+				</tr>
+			</table>
+		</div>
+		<div id="right">
+			<table id="grid"></table>
+			<div id="controls">
+				<button id="game">game</button>
+				<button id="teleport">Teleport</button>
+				<button id="attack">Attack</button>
+				<button id="lastStand">Stand Ground</button>
+			</div>
+		</div>
+	</div>
 </body>
 </html>
