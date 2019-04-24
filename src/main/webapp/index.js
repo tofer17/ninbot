@@ -57,8 +57,12 @@ function prng ( min, max, skew ) {
 	}
 }
 
-function placeOnGrid ( grid, entity, atX, atY ) {
+function removeFromParent ( entity ) {
 	if ( entity.parentElement ) entity.parentElement.removeChild( entity );
+}
+
+function placeOnGrid ( grid, entity, atX, atY ) {
+	removeFromParent( entity );
 
 	if ( atX == null ) {
 		atX = entity.app.x;
@@ -77,6 +81,39 @@ function placeOnGrid ( grid, entity, atX, atY ) {
 
 	return cell;
 }
+
+/**
+ * Computes a cardinal direction "from" fX/fY "towards" tX/tY. If only fX/fY are supplied then it assumes fX/fY have
+ * been translated.
+ *
+ * @param fX
+ * @param fY
+ * @param tX
+ * @param tY
+ * @returns A direction 0 = NONE, 1 = NW, 2 = N... 8 = E.
+ */
+function getDirectionFromTo ( fX, fY, tX, tY ) {
+
+	tX = tX != null ? tX - fX : fX;
+	tY = tY != null ? tY - fY : fY;
+
+	if ( tX == 0 && tY == 0 ) return 0;
+
+	const dir = Math.floor( (157.5 + ( Math.atan2( tY, tX ) * 180.0 / Math.PI ) ) / 45.0 );
+
+	return dir >= 0 ? ( dir + 1) : 8;
+}
+
+const DIRS = new Array();
+DIRS[0] = {x: 0, y: 0}; // --
+DIRS[1] = {x:-1, y:-1}; // NW
+DIRS[2] = {x: 0, y:-1}; // N
+DIRS[3] = {x: 1, y:-1}; // NE
+DIRS[4] = {x: 1, y: 0}; // E
+DIRS[5] = {x: 1, y: 1}; // SE
+DIRS[6] = {x: 0, y: 1}; // S
+DIRS[7] = {x:-1, y: 1}; // SW
+DIRS[8] = {x:-1, y: 0}; // W
 
 /**
  * Begins Game: create the grid and player.
@@ -134,6 +171,13 @@ function turnBegin ( entity ) {
 
 function turnAction ( entity, action ) {
 
+	if ( action >= 1 && action <= 8 ) {
+
+		entity.app.x += DIRS[ action ].x;
+		entity.app.y += DIRS[ action ].y;
+
+		placeOnGrid( app.grid, entity );
+	}
 }
 
 function turnEnd ( entity ) {
@@ -200,12 +244,43 @@ function play () {
 	gameBegin();
 }
 
+function playerMove ( event ) {
+	const player = app.player;
+
+	let target = event.target;
+
+	if ( event.target.tagName != "TD" ) {
+		target = event.target.parentElement;
+	}
+
+	if ( target.tagName != "TD" ) {
+		console.warn( "Drag!"  );
+		return;
+	}
+
+	const tX = target.cellIndex - player.app.x;
+	const tY = target.parentElement.rowIndex - player.app.y;
+
+	const dir = getDirectionFromTo( player.app.x, player.app.y, target.cellIndex, target.parentElement.rowIndex );
+
+	turnAction( app.player, dir );
+
+}
+
 function handleEvent ( event ) {
 
+	let handler = null;
+
 	if ( event.target == app.controls.play ) {
-		Promise.resolve().then( play );
+		handler = play;
+	} else if ( event.currentTarget == app.grid ) {
+		handler = playerMove;
 	} else {
-		console.warn( "Unkown event:", event );
+		console.warn( "Unkown event:", event, event.currentTarget );
+	}
+
+	if ( handler != null ) {
+		Promise.resolve( event ).then( handler );
 	}
 }
 
@@ -259,6 +334,7 @@ function main ( event ) {
 	app.controls.play.addEventListener( "click", handleEvent );
 
 	displayIntro();
+	//play();
 }
 
 window.addEventListener( "load", main );
