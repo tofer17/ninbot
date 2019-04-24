@@ -10,41 +10,76 @@
 <body>
 	<h1>Ninbot</h1>
 	<div id="ninbot">
-		<div id="left">
-			<table id="hud">
-				<tr>
-					<td><img src="life.png"></td>
-					<td id="lives">-</td>
-				</tr>
-				<tr>
-					<td>Level</td>
-					<td id="level">-</td>
-				</tr>
-				<tr>
-					<td><img src="enemy.png"></td>
-					<td id="enemies">-</td>
-				</tr>
-				<tr>
-					<td>Score</td>
-					<td id="score">-</td>
-				</tr>
-				<tr>
-					<td><img src="buff.png"></td>
-					<td id="attacks">-</td>
-				</tr>
-				<tr>
-					<td>Mana</td>
-					<td><progress id="mana" max="100" value="35"></progress></td>
-				</tr>
-			</table>
+		<div id="intro">
+			<h1>High Scores</h1>
+			<div id="hst_scroll">
+				<table id="hst">
+					<tr>
+						<td>CMM</td>
+						<td>1,234,567</td>
+					<tr>
+						<td>Anika</td>
+						<td>234,567</td>
+					<tr>
+						<td>-?-</td>
+						<td>34,567</td>
+					<tr>
+						<td>fishie</td>
+						<td>4,567</td>
+				</table>
+			</div>
+			<div id="instructions">
+				<p>
+					Click on the field to move <b>Ninbot</b>; click Ninbot to stand still (and recharge teleport mana).
+				</p>
+				<p>Avoid the Hovercats. Avoid piles of debris.</p>
+				<p>Cause the Hovercats to collide with one another&mdash; and with piles of debris.</p>
+				<p>Clear each level to go to the next&mdash; it gets harder and harder.</p>
+				<p>Use Teleport to move to a random point; the more mana Ninbot has, the safer the teleport will be.</p>
+				<p>Teleporting consumes mana; but Ninbot can always teleport.</p>
+				<p>Use Ninbot's Attack command to destroy nearby Hovercats&mdash; attack wisely.</p>
+				<p>Pickup Power Smoothies on the field to recharge Ninbot's Attack ability.</p>
+				<p>Hovercats will explode when they run over Power Smoothies (<i>who knew!?</i>).</p>
+			</div>
+			<button id="play">Play!</button>
 		</div>
-		<div id="right">
-			<table id="grid"></table>
-			<div id="controls">
-				<button id="game">game</button>
-				<button id="teleport">Teleport</button>
-				<button id="attack">Attack</button>
-				<button id="lastStand">Stand Ground</button>
+		<div id="game" class="dim">
+			<div id="left">
+				<table id="hud">
+					<tr>
+						<td><img src="life.png"></td>
+						<td id="lives">-</td>
+					</tr>
+					<tr>
+						<td>Level</td>
+						<td id="level">-</td>
+					</tr>
+					<tr>
+						<td><img src="enemy.png"></td>
+						<td id="enemies">-</td>
+					</tr>
+					<tr>
+						<td>Score</td>
+						<td id="score">-</td>
+					</tr>
+					<tr>
+						<td><img src="buff.png"></td>
+						<td id="attacks">-</td>
+					</tr>
+					<tr>
+						<td>Mana</td>
+						<td><progress id="mana" max="100" value="75"></progress></td>
+					</tr>
+				</table>
+			</div>
+			<div id="right">
+				<table id="grid"></table>
+				<div id="controls">
+					<button id="game_action" class="hidden">game</button>
+					<button id="teleport">Teleport</button>
+					<button id="attack">Attack</button>
+					<button id="lastStand">Stand Ground</button>
+				</div>
 			</div>
 		</div>
 	</div>

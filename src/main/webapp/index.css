@@ -3,26 +3,99 @@
 body {
 	font-family: sans-serif;
 	margin: 0;
-}
-
-table {
-	border-collapse: collapse;
-	border-spacing: 0;
-}
-
-.hidden {
-	display: none;
+	background-color: #112;
+	color: #a99;
 }
 
 #ninbot {
 	
 }
 
-#ninbot>#left {
+#ninbot table {
+	border-collapse: collapse;
+	border-spacing: 0;
+}
+
+#ninbot button {
+	width: 8em;
+	height: 2em;
+	margin-left: 1em;
+	margin-right: 1em;
+	background-color: #112;
+	color: #a99;
+	font-weight: bold;
+	border-radius: 8px;
+}
+
+#ninbot .hidden {
+	display: none;
+}
+
+#ninbot .dim {
+	opacity: 0.4;
+}
+
+#ninbot #intro {
+	position: absolute;
+	top: 4em;
+	left: 4em;
+	bottom: 4em;
+	right: 4em;
+	background-color: rgba(200, 200, 200, 0.8);
+	border: 4px solid #ddd;
+	z-index: 200;
+	color: white;
+	text-align: center;
+}
+
+#ninbot #intro h1 {
+	
+}
+
+#ninbot #intro div {
+	width: 90%;
+	overflow-y: auto;
+	margin: auto;
+}
+
+#ninbot #intro #hst_scroll {
+	height: 28%;
+}
+
+#ninbot #intro table#hst {
+	margin: auto;
+	width: 50%;
+}
+
+#ninbot #intro #hst tr:first-child {
+	font-size: 1.5em;
+}
+
+#ninbot #intro #instructions {
+	height: 48%;
+}
+
+#ninbot #intro #instructions p {
+	font-size: 0.8em;
+	color: #223;
+}
+
+#ninbot #intro button#play {
+	margin-top: 1.5em;
+}
+
+#ninbot #game {
+	z-index: 0;
+	position: absolute;
+	left: 0;
+	right: 0;
+}
+
+#ninbot #left {
 	float: left;
 }
 
-#ninbot>#right {
+#ninbot #right {
 	border: 4px solid #ddd;
 	float: left;
 }
@@ -67,8 +140,33 @@ table {
 	width: inherit;
 }
 
+#ninbot #hud progress#mana { 
+   -webkit-appearance: none;
+   appearance: none;
+}
+
+#ninbot #hud progress#mana::-webkit-progress-bar {
+     background-color: #eee;
+     border-radius: 2px;
+     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25) inset;
+}
+
+#ninbot #hud progress#mana[value]::-webkit-progress-value {
+    background-image:
+         -webkit-linear-gradient(-45deg, 
+                           transparent 33%, rgba(0, 0, 0, .1) 33%, 
+                           rgba(0,0, 0, .1) 66%, transparent 66%),
+         -webkit-linear-gradient(top, 
+                           rgba(255, 255, 255, .25), 
+                           rgba(0, 0, 0, .25)),
+         -webkit-linear-gradient(left, #09c, #f44);
+
+    border-radius: 2px; 
+    background-size: 35px 20px, 100% 100%, 100% 100%;
+  }  
+
 #ninbot #grid, #ninbot #controls {
-	background: #eee;
+	background: #99a;
 }
 
 #ninbot #grid {
@@ -84,10 +182,10 @@ table {
 }
 
 #ninbot #controls button {
-	width: 8em;
+	
 }
 
-#ninbot #controls button#game {
+#ninbot #controls button#game_action {
 	
 }
 
@@ -102,12 +200,3 @@ table {
 #ninbot #controls button#lastStand {
 	
 }
-
-
-
-
-
-
-
-
-
