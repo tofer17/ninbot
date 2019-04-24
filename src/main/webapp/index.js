@@ -3,6 +3,62 @@
  *
  */
 
+function gameBegin () {
+
+	levelBegin();
+}
+
+function levelBegin () {
+
+	roundBegin();
+}
+
+function roundBegin () {
+
+	turnBegin( app.player );
+}
+
+function turnBegin ( entity ) {
+
+	if ( entity == app.player ) {
+
+		turnEnd( entity );
+	} else if ( entity == null ) {
+
+		turnEnd();
+	}
+}
+
+function turnAction ( entity, action ) {
+
+}
+
+function turnEnd ( entity ) {
+
+	roundEnd();
+}
+
+function roundEnd () {
+
+	if ( app.player.isDead || app.enemies.length == 0 ) {
+		levelEnd();
+	} else {
+		roundBegin();
+	}
+}
+
+function levelEnd () {
+
+	if ( app.player.isDead || app.enemies.length == 0 ) {
+		gameEnd();
+	} else {
+		levelBegin();
+	}
+}
+
+function gameEnd () {
+
+}
 
 function displayIntro () {
 
@@ -29,7 +85,7 @@ function main ( event ) {
 
 	app.game = document.querySelector( "#ninbot #game" );
 
-	app.hud = document.querySelector( "#ninbot #hud");
+	app.hud = document.querySelector( "#ninbot #hud" );
 	app.hud.lives = app.hud.querySelector( "#lives" );
 	app.hud.level = app.hud.querySelector( "#level" );
 	app.hud.enemies = app.hud.querySelector( "#enemies" );
@@ -37,9 +93,9 @@ function main ( event ) {
 	app.hud.attacks = app.hud.querySelector( "#attacks" );
 	app.hud.mana = app.hud.querySelector( "#mana" );
 
-	app.grid = document.querySelector( "#ninbot #grid");
+	app.grid = document.querySelector( "#ninbot #grid" );
 
-	app.controls = document.querySelector( "#ninbot #controls");
+	app.controls = document.querySelector( "#ninbot #controls" );
 	app.controls.gameAction = app.controls.querySelector( "#game_action" );
 	app.controls.teleport = app.controls.querySelector( "#teleport" );
 	app.controls.attack = app.controls.querySelector( "#attack" );
@@ -47,6 +103,12 @@ function main ( event ) {
 	// Keep "play" with other controls
 	app.controls.play = app.intro.querySelector( "#play" );
 
+	app.player = null;
+	app.enemies = null;
+	app.buffs = null;
+	app.hazards = null;
+
+	app.config = null;
 
 	app.grid.addEventListener( "click", handleEvent );
 	app.controls.gameAction.addEventListener( "click", handleEvent );
