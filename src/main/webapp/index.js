@@ -150,6 +150,8 @@ function levelBegin () {
 
 	placeOnGrid( grid, player );
 
+	app.enemies = new Array();
+
 	roundBegin();
 }
 
@@ -162,9 +164,8 @@ function turnBegin ( entity ) {
 
 	if ( entity == app.player ) {
 
-		turnEnd( entity );
 	} else if ( entity == null ) {
-
+		console.log( "...move enemies..." );
 		turnEnd();
 	}
 }
@@ -178,14 +179,24 @@ function turnAction ( entity, action ) {
 
 		placeOnGrid( app.grid, entity );
 	}
+
+	if ( entity == app.player ) {
+		turnEnd( entity );
+	}
 }
 
 function turnEnd ( entity ) {
 
-	roundEnd();
+	if ( entity == app.player ) {
+		turnBegin();
+	} else if ( entity == null ) {
+		roundEnd();
+	}
 }
 
 function roundEnd () {
+
+	console.log( "...check collisions..." );
 
 	if ( app.player.app.isDead || app.enemies.length == 0 ) {
 		levelEnd();
@@ -204,7 +215,7 @@ function levelEnd () {
 }
 
 function gameEnd () {
-
+	console.log( "...game end..." );
 }
 
 function displayIntro () {
