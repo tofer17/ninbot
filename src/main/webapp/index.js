@@ -133,7 +133,62 @@ function createEnemy ( atX, atY ) {
 	enemy.app.x = atX;
 	enemy.app.y = atY;
 
+	enemy.app.isDead = false;
+
 	return enemy;
+}
+
+function harmEntity( aggro, victim ) {
+
+	const aggroType = aggro.classList.contains( "enemy" ) ? "enemy" : "?";
+	const victimType = victim.classList.contains( "enemy" ) ? "enemy" : "?";
+
+	console.log( "Aggro", aggro, "harms", victim );
+	// when aggro and victim are each enemy, they both die
+	if ( aggroType == "enemy" && victimType == "enemy" ) {
+		return [ null, null ];
+	}
+
+
+}
+
+function checkCollision ( entity, entities ) {
+	for ( let i = 0; i < entities.length; i++ ) {
+		const ent = entities[ i ];
+		if ( entity == ent ) continue;
+		if ( entity.app.x == ent.app.x && entity.app.y == ent.app.y ) {
+			// Collision!
+			if ( ent.classList.contains( "enemy" ) ) {
+				const result = harmEntity( ent, entity );
+
+				if ( result[1] == null ) {
+					entities[ i ].app.isDead = true;
+				}
+
+				if ( result[0] == null ) {
+					return true;
+				}
+			}
+		}
+	}
+
+	return false;
+}
+
+function cullDead ( entities ) {
+	for ( let i = 0; i < entities.length; i++ ) {
+		if ( entities[ i ].app.isDead ) {
+removeFromGrid(  entities[i]); console.log("dead", entities[i]);
+			entities[i] = null;
+		}
+	}
+
+	let index = entities.indexOf( null );
+
+	while ( index >= 0 ) {
+		entities.splice( index, 1 );
+		index = entities.indexOf( null );
+	}
 }
 
 /**
@@ -221,9 +276,7 @@ function turnAction ( entity, action ) {
 		placeOnGrid( app.grid, entity );
 	}
 
-	if ( entity == app.player ) {
-		turnEnd( entity );
-	}
+	turnEnd( entity );
 }
 
 function turnEnd ( entity ) {
@@ -232,12 +285,47 @@ function turnEnd ( entity ) {
 		turnBegin();
 	} else if ( entity == null ) {
 		roundEnd();
+	} else {
+		//console.log( "...check collisions..." );
+		//entity.isDead = checkCollision( entity, app.enemies );
+
+		//const result = checkCollision( entity, app.enemies );
+		//if ( result == null ) {
+		//	// Entity dies
+		//	x x
+		//}
+
 	}
 }
 
 function roundEnd () {
+	const player = app.player;
+	const enemies = app.enemies;
 
 	console.log( "...check collisions..." );
+
+	// Check enemy collisions
+	for ( let i = 0; i < enemies.length; i++ ) {
+		const enemy = enemies[ i ];
+		for ( let j = 0; j < enemies.length; j++ ) {
+			if ( i == j ) continue;
+			const enem = enemies[ j ];
+			if ( enemy.app.x == enem.app.x && enemy.app.y == enem.app.y ) {
+				//removeFromParent( enemy );
+				//removeFromParent( enem );
+		console.log("e2e");
+				enemies[ i ].isDead = true;
+				enemies[ j ].isDead = true;
+			}
+		}
+
+		if ( enemy.app.x == player.app.x && enemy.app.y == player.app.y ) {
+			player.app.isDead = true;
+		}
+	}
+
+	// Cull dead enemies
+	cullDead( enemies );
 
 	if ( app.player.app.isDead || app.enemies.length == 0 ) {
 		levelEnd();
