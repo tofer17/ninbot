@@ -170,8 +170,18 @@ body {
 }
 
 #ninbot #grid {
-	width: 580px;
-	height: 580px;
+	line-height: 0px
+}
+
+#ninbot #grid td {
+	width: 28px;
+	height: 28px;
+	padding: 0;
+	margin: 0;
+	border: 1px dotted #aab;
+	text-align: center;
+	vertical-align: middle;
+	position: relative;
 }
 
 #ninbot #controls {

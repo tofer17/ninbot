@@ -3,7 +3,25 @@
  *
  */
 
-function gameBegin () {
+function createGrid ( grid, width, height ) {
+
+	grid.innerHTML = "";
+
+	for ( let i = 0; i < height; i++ ) {
+		const tr = grid.insertRow();
+		for ( let j = 0; j < width; j++ ) {
+			const td = tr.insertCell();
+		}
+	}
+}
+
+/**
+ * Begins Game: create the grid.
+ * @returns
+ */
+function gameBegin (e) {
+
+	createGrid( app.grid, app.config.width, app.config.height );
 
 	levelBegin();
 }
@@ -62,7 +80,7 @@ function gameEnd () {
 
 function displayIntro () {
 
-	app.intro.style.display = "initial";
+	app.intro.classList.remove( "hidden" );
 	app.game.classList.add( "dim" );
 
 	app.controls.gameAction.classList.add( "hidden" );
@@ -73,8 +91,32 @@ function displayIntro () {
 	app.controls.play.disabled = false;
 }
 
+/**
+ * Hides intro, displays and starts game.
+ * @returns
+ */
+function play () {
+console.log( app.intro );
+
+	app.intro.classList.add( "hidden" );
+	app.controls.play.disabled = true;
+
+	app.game.classList.remove( "dim" );
+
+	// TODO: Pull these values from intro
+	app.config.width = 21;
+	app.config.height = 21;
+
+	gameBegin();
+}
+
 function handleEvent ( event ) {
-	console.log( event.target.id, event );
+
+	if ( event.target == app.controls.play ) {
+		Promise.resolve().then( play );
+	} else {
+		console.warn( "Unkown event:", event );
+	}
 }
 
 function main ( event ) {
@@ -94,6 +136,8 @@ function main ( event ) {
 	app.hud.mana = app.hud.querySelector( "#mana" );
 
 	app.grid = document.querySelector( "#ninbot #grid" );
+	// Just create a grid to show for intro for now.
+	createGrid( app.grid, 21, 21 );
 
 	app.controls = document.querySelector( "#ninbot #controls" );
 	app.controls.gameAction = app.controls.querySelector( "#game_action" );
@@ -108,7 +152,9 @@ function main ( event ) {
 	app.buffs = null;
 	app.hazards = null;
 
-	app.config = null;
+	app.config = new Object();
+	app.config.width = null;
+	app.config.height = null;
 
 	app.grid.addEventListener( "click", handleEvent );
 	app.controls.gameAction.addEventListener( "click", handleEvent );
