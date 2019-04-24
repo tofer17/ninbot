@@ -84,7 +84,7 @@ function placeOnGrid ( grid, entity, atX, atY ) {
 
 /**
  * Computes a cardinal direction "from" fX/fY "towards" tX/tY. If only fX/fY are supplied then it assumes fX/fY have
- * been translated.
+ * been translated. fX and fY can also be "entities"
  *
  * @param fX
  * @param fY
@@ -93,6 +93,15 @@ function placeOnGrid ( grid, entity, atX, atY ) {
  * @returns A direction 0 = NONE, 1 = NW, 2 = N... 8 = E.
  */
 function getDirectionFromTo ( fX, fY, tX, tY ) {
+
+	if ( fX.app ) {
+		// Getting passed in entities...
+		tX = fY.app.x;
+		tY = fY.app.y;
+
+		fY = fX.app.y
+		fX = fX.app.x
+	}
 
 	tX = tX != null ? tX - fX : fX;
 	tY = tY != null ? tY - fY : fY;
@@ -194,7 +203,10 @@ function turnBegin ( entity ) {
 	if ( entity == app.player ) {
 
 	} else if ( entity == null ) {
-		console.log( "...move enemies..." );
+		for ( let i = 0; i < app.enemies.length; i++ ) {
+			const enemy = app.enemies[ i ];
+			turnAction( enemy, getDirectionFromTo( enemy, app.player ) );
+		}
 		turnEnd();
 	}
 }
