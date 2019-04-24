@@ -178,7 +178,7 @@ function checkCollision ( entity, entities ) {
 function cullDead ( entities ) {
 	for ( let i = 0; i < entities.length; i++ ) {
 		if ( entities[ i ].app.isDead ) {
-removeFromGrid(  entities[i]); console.log("dead", entities[i]);
+//removeFromParent(  entities[i]); console.log("dead", entities[i]);
 			entities[i] = null;
 		}
 	}
@@ -311,11 +311,10 @@ function roundEnd () {
 			if ( i == j ) continue;
 			const enem = enemies[ j ];
 			if ( enemy.app.x == enem.app.x && enemy.app.y == enem.app.y ) {
-				//removeFromParent( enemy );
-				//removeFromParent( enem );
-		console.log("e2e");
-				enemies[ i ].isDead = true;
-				enemies[ j ].isDead = true;
+				removeFromParent( enemy );
+				removeFromParent( enem );
+				enemy.app.isDead = true;
+				enem.app.isDead = true;
 			}
 		}
 
@@ -344,7 +343,7 @@ function levelEnd () {
 }
 
 function gameEnd () {
-	console.log( "...game end..." );
+	console.log( "...game end...", app.player.app.isDead ? "Player died" : "Player WINS" );
 }
 
 function displayIntro () {
