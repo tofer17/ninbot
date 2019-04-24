@@ -115,6 +115,18 @@ DIRS[6] = {x: 0, y: 1}; // S
 DIRS[7] = {x:-1, y: 1}; // SW
 DIRS[8] = {x:-1, y: 0}; // W
 
+function createEnemy ( atX, atY ) {
+	const enemy = document.createElement( "div" );
+	enemy.classList.add( "enemy" );
+	enemy.classList.add( "entity" );
+
+	enemy.app = new Object();
+	enemy.app.x = atX;
+	enemy.app.y = atY;
+
+	return enemy;
+}
+
 /**
  * Begins Game: create the grid and player.
  *
@@ -130,7 +142,7 @@ function gameBegin ( e ) {
 }
 
 /**
- * Begins the level: places player on grid
+ * Begins the level: places player on grid, creates and places enemies
  *
  * @returns
  */
@@ -150,7 +162,24 @@ function levelBegin () {
 
 	placeOnGrid( grid, player );
 
-	app.enemies = new Array();
+	const enemyCount = app.config.startingEnemies + (app.config.enemyFactor * (player.app.level - 1) );
+
+	const enemies = new Array( enemyCount );
+	app.enemies = enemies;
+
+	for ( let i = 0; i < enemyCount; i++ ) {
+
+		const eX = prng( 0, app.config.width );
+		const eY = prng( 0, app.config.height );
+
+		if ( eX == player.app.x && eY == player.app.y ) {
+			i--;
+		} else {
+			const enemy = createEnemy( eX, eY );
+			enemies[ i ] = enemy;
+			placeOnGrid( grid, enemy );
+		}
+	}
 
 	roundBegin();
 }
@@ -252,6 +281,9 @@ function play () {
 	app.config.startingAttacks = 0;
 	app.config.startingMana = 75;
 
+	app.config.startingEnemies = 4;
+	app.config.enemyFactor = 1.5;
+
 	gameBegin();
 }
 
@@ -337,6 +369,9 @@ function main ( event ) {
 	app.config.startingAttacks = null;
 	app.config.startingMana = null;
 
+	app.config.startingEnemies = null;
+	app.config.enemyFactor = null;
+
 	app.grid.addEventListener( "click", handleEvent );
 	app.controls.gameAction.addEventListener( "click", handleEvent );
 	app.controls.teleport.addEventListener( "click", handleEvent );
@@ -345,7 +380,7 @@ function main ( event ) {
 	app.controls.play.addEventListener( "click", handleEvent );
 
 	displayIntro();
-	//play();
+	play();
 }
 
 window.addEventListener( "load", main );
