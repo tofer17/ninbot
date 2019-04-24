@@ -140,30 +140,25 @@ body {
 	width: inherit;
 }
 
-#ninbot #hud progress#mana { 
-   -webkit-appearance: none;
-   appearance: none;
+#ninbot #hud progress#mana {
+	-webkit-appearance: none;
+	appearance: none;
 }
 
 #ninbot #hud progress#mana::-webkit-progress-bar {
-     background-color: #eee;
-     border-radius: 2px;
-     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25) inset;
+	background-color: #eee;
+	border-radius: 2px;
+	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25) inset;
 }
 
 #ninbot #hud progress#mana[value]::-webkit-progress-value {
-    background-image:
-         -webkit-linear-gradient(-45deg, 
-                           transparent 33%, rgba(0, 0, 0, .1) 33%, 
-                           rgba(0,0, 0, .1) 66%, transparent 66%),
-         -webkit-linear-gradient(top, 
-                           rgba(255, 255, 255, .25), 
-                           rgba(0, 0, 0, .25)),
-         -webkit-linear-gradient(left, #09c, #f44);
-
-    border-radius: 2px; 
-    background-size: 35px 20px, 100% 100%, 100% 100%;
-  }  
+	background-image: -webkit-linear-gradient(-45deg, transparent 33%, rgba(0, 0, 0, .1)
+		33%, rgba(0, 0, 0, .1) 66%, transparent 66%),
+		-webkit-linear-gradient(top, rgba(255, 255, 255, .25),
+		rgba(0, 0, 0, .25)), -webkit-linear-gradient(left, #09c, #f44);
+	border-radius: 2px;
+	background-size: 35px 20px, 100% 100%, 100% 100%;
+}
 
 #ninbot #grid, #ninbot #controls {
 	background: #99a;
@@ -209,4 +204,17 @@ body {
 
 #ninbot #controls button#lastStand {
 	
+}
+
+#ninbot #grid .entity {
+	position: absolute;
+	top: 5px;
+	left: 5px;
+	width: 16px;
+	height: 16px;
+}
+
+#ninbot #grid .player {
+	border: 1px solid red;
+	background-image: url( "player.png" );
 }

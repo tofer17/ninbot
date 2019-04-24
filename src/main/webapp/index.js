@@ -15,18 +15,103 @@ function createGrid ( grid, width, height ) {
 	}
 }
 
+function createPlayer ( config ) {
+	const player = document.createElement( "div" );
+	player.classList.add( "player" );
+	player.classList.add( "entity" );
+
+	player.app = new Object();
+	player.app.x = null;
+	player.app.y = null;
+
+	player.app.lives = config.startingLives;
+	player.app.level = config.startingLevel;
+	player.app.score = 0;
+	player.app.attackCount = config.startingAttacks;
+	player.app.mana = config.startingMana;
+
+	player.app.isDead = false;
+
+	return player;
+}
+
 /**
- * Begins Game: create the grid.
+ * Generates a random number.
+ *
+ * @param min
+ * @param max
+ * @param skew
  * @returns
  */
-function gameBegin (e) {
+function prng ( min, max, skew ) {
+	if ( min == null || max == null ) {
+		// Return a uniform random number [0..1)
+		return Math.random();
+	} else if ( skew == null ) {
+		// return a uniform random number [min..max)
+		return Math.floor( ( Math.random() * max - min ) + min );
+	} else {
+		// Return a skewed normal random number [min..max)
+		console.warn( "BM PRNG function not yet implemented" );
+		return prng( min, max );
+	}
+}
+
+function placeOnGrid ( grid, entity, atX, atY ) {
+	if ( entity.parentElement ) entity.parentElement.removeChild( entity );
+
+	if ( atX == null ) {
+		atX = entity.app.x;
+	} else {
+		entity.app.x = atX;
+	}
+
+	if ( atY == null ) {
+		atY = entity.app.y;
+	} else {
+		entity.app.y = atY;
+	}
+
+	const cell = grid.rows[ atY ].cells[ atX ];
+	cell.appendChild( entity );
+
+	return cell;
+}
+
+/**
+ * Begins Game: create the grid and player.
+ *
+ * @returns
+ */
+function gameBegin ( e ) {
 
 	createGrid( app.grid, app.config.width, app.config.height );
+
+	app.player = createPlayer( app.config );
 
 	levelBegin();
 }
 
+/**
+ * Begins the level: places player on grid
+ *
+ * @returns
+ */
 function levelBegin () {
+	const player = app.player;
+	const grid = app.grid;
+
+	if ( player.app.level == 1 ) {
+		// First level, place in center
+		player.app.x = Math.floor( app.config.width / 2 );
+		player.app.y = Math.floor( app.config.height / 2 );
+	} else {
+		// ...place randomly
+		player.app.x = prng( 0, app.config.width );
+		player.app.y = prng( 0, app.config.height );
+	}
+
+	placeOnGrid( grid, player );
 
 	roundBegin();
 }
@@ -58,7 +143,7 @@ function turnEnd ( entity ) {
 
 function roundEnd () {
 
-	if ( app.player.isDead || app.enemies.length == 0 ) {
+	if ( app.player.app.isDead || app.enemies.length == 0 ) {
 		levelEnd();
 	} else {
 		roundBegin();
@@ -67,7 +152,7 @@ function roundEnd () {
 
 function levelEnd () {
 
-	if ( app.player.isDead || app.enemies.length == 0 ) {
+	if ( app.player.app.isDead || app.enemies.length == 0 ) {
 		gameEnd();
 	} else {
 		levelBegin();
@@ -93,10 +178,10 @@ function displayIntro () {
 
 /**
  * Hides intro, displays and starts game.
+ *
  * @returns
  */
 function play () {
-console.log( app.intro );
 
 	app.intro.classList.add( "hidden" );
 	app.controls.play.disabled = true;
@@ -106,6 +191,11 @@ console.log( app.intro );
 	// TODO: Pull these values from intro
 	app.config.width = 21;
 	app.config.height = 21;
+
+	app.config.startingLevel = 1;
+	app.config.startingLives = 3;
+	app.config.startingAttacks = 0;
+	app.config.startingMana = 75;
 
 	gameBegin();
 }
@@ -155,6 +245,11 @@ function main ( event ) {
 	app.config = new Object();
 	app.config.width = null;
 	app.config.height = null;
+
+	app.config.startingLevel = null;
+	app.config.startingLives = null;
+	app.config.startingAttacks = null;
+	app.config.startingMana = null;
 
 	app.grid.addEventListener( "click", handleEvent );
 	app.controls.gameAction.addEventListener( "click", handleEvent );
