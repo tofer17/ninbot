@@ -48,7 +48,7 @@ function prng ( min, max, skew ) {
 		// Return a uniform random number [0..1)
 		return Math.random();
 	} else if ( skew == null ) {
-		// return a uniform random number [min..max)
+		// return a uniform random integer [min..max)
 		return Math.floor( ( Math.random() * max - min ) + min );
 	} else {
 		// Return a skewed normal random number [min..max)
@@ -207,6 +207,9 @@ function gameBegin ( e ) {
 
 	app.player = createPlayer( app.config );
 
+	app.controls.teleport.disabled = false;
+	app.controls.lastStand.disabled = false;
+
 	levelBegin();
 }
 
@@ -305,7 +308,7 @@ function turnAction ( entity, action ) {
 
 		placeOnGrid( entity );
 	} else if ( action == "attack" ) {
-		const player = app.player;
+		const player = entity;
 		const enemies = app.enemies;
 
 		player.app.attackCount--;
@@ -326,6 +329,10 @@ function turnAction ( entity, action ) {
 		}
 
 		cullDead( enemies );
+	} else if ( action == "teleport" ) {
+		entity.app.x = prng( app.config.width, app.config.height );
+		entity.app.y = prng( app.config.width, app.config.height );
+		placeOnGrid( entity );
 	}
 
 	turnEnd( entity );
@@ -566,6 +573,10 @@ function gameAction ( event ) {
 	}
 }
 
+function playerTeleport ( event ) {
+	turnAction( app.player, "teleport" );
+}
+
 function handleEvent ( event ) {
 
 	let handler = null;
@@ -578,6 +589,8 @@ function handleEvent ( event ) {
 		handler = playerAttack;
 	} else if ( event.target == app.controls.gameAction ) {
 		handler = gameAction;
+	} else if ( event.target == app.controls.teleport ) {
+		handler = playerTeleport;
 	} else {
 		console.warn( "Unkown event:", event, event.currentTarget );
 	}
