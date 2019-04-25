@@ -763,7 +763,7 @@ function play () {
 function playerMove ( event ) {
 	const player = app.player;
 
-	if ( player.app.isDead || player.app.standing != null ) return;
+	if ( player.app.isDead || player.app.standing != null || !app.controls.gameAction.classList.contains( "hidden" ) ) return;
 
 	let target = event.target;
 
