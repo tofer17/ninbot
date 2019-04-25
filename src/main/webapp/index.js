@@ -185,12 +185,20 @@ function createEnemy ( atX, atY ) {
 
 const hazardIds = ids();
 function createHazard ( atX, atY ) {
-	return createEntity( "hazard", hazardIds.next().value, atX, atY );
+	const hazard = createEntity( "hazard", hazardIds.next().value, atX, atY );
+
+	animateDeath( hazard );
+
+	return hazard;
 }
 
 const buffIds = ids();
 function createBuff ( type, atX, atY ) {
-	return createEntity( type, buffIds.next().value, atX, atY );
+	const buff = createEntity( type, buffIds.next().value, atX, atY );
+
+	animateBirth( buff );
+
+	return buff;
 }
 
 function cullDead ( entities ) {
@@ -211,6 +219,28 @@ function cullDead ( entities ) {
 function collided ( entityA, entityB ) {
 	return entityA.app.x == entityB.app.x && entityA.app.y == entityB.app.y;
 }
+
+function endAnimation ( event ) {
+	event.target.classList.remove( event.animationName );
+}
+
+function startAnimation ( element, animationName ) {
+	element.addEventListener( "animationend", endAnimation );
+	element.classList.add( animationName );
+}
+
+function animateDeath ( element ) {
+	startAnimation( element, "death_anim" );
+}
+
+function animateBirth ( element ) {
+	startAnimation( element, "birth_anim" );
+}
+
+function animatePickup ( element ) {
+	startAnimation( element, "pickup_anim" );
+}
+
 
 /**
  * Begins Game: create the grid and player.
@@ -512,6 +542,8 @@ function roundEnd () {
 			const hazard = hazards[ j ];
 			if ( collided( enemy, hazard ) ) {
 				removeFromParent( enemy );
+
+				animateDeath( hazard );
 
 				player.app.score += app.config.hazardCollisionScore;
 				console.debug( "e2h", enemy.app, hazard.app );
