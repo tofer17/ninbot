@@ -251,6 +251,20 @@ body {
 	animation: pickup_anim 2s;
 }
 
+.animated_text {
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	z-index: 100;
+	color: yellow;
+	font-weight: bold;
+	cursor: default;
+}
+
+.text_anim {
+	animation: text_anim 2s;
+}
+
 @keyframes birth_anim {
 	from {
 		background-color: #fff;
@@ -275,5 +289,21 @@ body {
 	}
 	to {
 		background-color: initial;
+	}
+}
+
+@keyframes text_anim {
+	from {
+		color: yellow;
+		top: 0px
+		left: 0px;
+		opacity: 1.0;
+	}
+	to {
+		color: white;
+		top: -17px;
+		left: -12px;
+		opacity: 0.0;
+		font-size: 2em;
 	}
 }

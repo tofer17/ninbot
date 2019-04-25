@@ -242,6 +242,18 @@ function animatePickup ( element ) {
 	startAnimation( element, "pickup_anim" );
 }
 
+function endTextAnimation ( event ) {
+	removeFromParent( event.target );
+}
+
+function animateText ( text, atEntity ) {
+	const textNode = document.createElement( "div" );
+	textNode.innerHTML = text;
+	textNode.classList.add( "animated_text" );
+	textNode.addEventListener( "animationend", endTextAnimation );
+	atEntity.appendChild( textNode );
+	startAnimation( textNode, "text_anim" );
+}
 
 /**
  * Begins Game: create the grid and player.
@@ -290,6 +302,7 @@ function levelBegin () {
 	player.app.isDead = false;
 
 	placeOnGrid( player );
+	animateText( "Hi", player.parentElement );
 
 	const enemyCount = Math.round( app.config.startingEnemies + (app.config.enemyFactor * (player.app.level - 1) ) );
 
@@ -404,7 +417,9 @@ function turnAction ( entity, action ) {
 				app.hazards.push( hazard );
 				placeOnGrid( hazard );
 
-				player.app.score += app.config.attackScore * ( player.app.lastStand != null ? app.config.lastStandBonus : 1 );
+				const score = app.config.attackScore * ( player.app.standing != null ? app.config.lastStandBonus : 1 );
+				player.app.score += score;
+				animateText( "+" + score, hazard );
 				console.debug( "pke", dist, enemy.app );
 			}
 		}
@@ -540,7 +555,9 @@ function roundEnd () {
 				hazards.push( hazard );
 				placeOnGrid( hazard );
 
-				player.app.score += app.config.enemyCollisionScore * ( player.app.lastStand != null ? app.config.lastStandBonus : 1 );
+				const score = app.config.enemyCollisionScore * ( player.app.standing != null ? app.config.lastStandBonus : 1 );
+				player.app.score += score;
+				animateText( "+" + score, hazard );
 				console.debug( "e2e", enemy.app, enem.app );
 			}
 		}
@@ -555,7 +572,9 @@ function roundEnd () {
 
 				animateDeath( hazard );
 
-				player.app.score += app.config.hazardCollisionScore * ( player.app.lastStand != null ? app.config.lastStandBonus : 1 );
+				const score = app.config.hazardCollisionScore * ( player.app.standing != null ? app.config.lastStandBonus : 1 );
+				player.app.score += score;
+				animateText( "+" + score, hazard );
 				console.debug( "e2h", enemy.app, hazard.app );
 			}
 		}
@@ -584,14 +603,16 @@ function roundEnd () {
 	for ( let i = 0; i < buffs.length; i++ ) {
 		const buff = buffs[ i ];
 		if ( collided( player, buff ) ) {
+			let amt = 0;
 			if ( buff.classList.contains( "attackBuff" ) ) {
-				const amt = Math.round( prng( app.config.attackBuff.min, app.config.attackBuff.max, app.config.attackBuff.skew ) );
+				amt = Math.round( prng( app.config.attackBuff.min, app.config.attackBuff.max, app.config.attackBuff.skew ) );
 				player.app.attackCount += amt;
 			} else if ( buff.classList.contains( "lifeBuff" ) ) {
-				const amt = Math.round( prng( app.config.lifeBuff.min, app.config.lifeBuff.max, app.config.lifeBuff.skew ) );
+				amt = Math.round( prng( app.config.lifeBuff.min, app.config.lifeBuff.max, app.config.lifeBuff.skew ) );
 				player.app.lives += amt;
 			}
 
+			animateText( "+" + amt, player.parentElement );
 			console.debug( "p2b", player.app, buff.app );
 			removeFromParent( buff );
 		}
