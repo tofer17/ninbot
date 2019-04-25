@@ -264,6 +264,12 @@ function levelBegin () {
 
 	player.app.attackCount += app.config.attackPerLevel;
 
+	app.controls.teleport.classList.remove( "hidden" );
+	app.controls.attack.classList.remove( "hidden" );
+	app.controls.lastStand.classList.remove( "hidden" );
+
+	app.controls.gameAction.classList.add( "hidden" );
+
 
 	updateDisplay();
 
@@ -417,15 +423,23 @@ function levelEnd () {
 		player.app.level++;
 	}
 
-	if ( player.app.lives < 0 ) {
-		gameEnd();
+	app.controls.teleport.classList.add( "hidden" );
+	app.controls.attack.classList.add( "hidden" );
+	app.controls.lastStand.classList.add( "hidden" );
+
+	app.controls.gameAction.classList.remove( "hidden" );
+
+	if ( player.app.lives <= 0 ) {
+		app.controls.gameAction.innerHTML = "Game Over!";
+	} else if ( player.app.isDead ) {
+		app.controls.gameAction.innerHTML = "They got you!";
 	} else {
-		levelBegin();
+		app.controls.gameAction.innerHTML = "Excelent job!";
 	}
 }
 
 function gameEnd () {
-	console.log( "...game end...", app.player.app.isDead ? "Player died" : "Player WINS" );
+	displayIntro();
 }
 
 function updateDisplay () {
@@ -512,6 +526,8 @@ function play () {
 function playerMove ( event ) {
 	const player = app.player;
 
+	if ( player.app.isDead ) return;
+
 	let target = event.target;
 
 	if ( event.target.tagName != "TD" ) {
@@ -535,6 +551,14 @@ function playerAttack ( event ) {
 	turnAction( app.player, "attack" );
 }
 
+function gameAction ( event ) {
+	if ( app.player.app.lives <= 0 ) {
+		gameEnd();
+	} else {
+		levelBegin();
+	}
+}
+
 function handleEvent ( event ) {
 
 	let handler = null;
@@ -545,6 +569,8 @@ function handleEvent ( event ) {
 		handler = playerMove;
 	} else if ( event.target == app.controls.attack ) {
 		handler = playerAttack;
+	} else if ( event.target == app.controls.gameAction ) {
+		handler = gameAction;
 	} else {
 		console.warn( "Unkown event:", event, event.currentTarget );
 	}
