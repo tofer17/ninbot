@@ -141,6 +141,12 @@ function getManhattanDirectionFromTo (fX, fY, tX, tY ) {
 	throw new Error( "Impossible direction." );
 }
 
+function getDistanceFromTo ( fX, fY, tX, tY ) {
+	if ( fX.app ) return getDistanceFromTo( fX.app.x, fX.app.y, fY.app.x, fY.app.y );
+
+	return Math.sqrt( Math.pow( (fX-tX), 2 ) + Math.pow( (fY-tY), 2 ) );
+}
+
 function createEntity( type, id, atX, atY ) {
 	const entity = document.createElement( "div" );
 	entity.classList.add( type );
@@ -213,6 +219,14 @@ function levelBegin () {
 	const player = app.player;
 	const grid = app.grid;
 
+	// Clear grid
+	for ( let i = 0; i < grid.rows.length; i++ ) {
+		const row = grid.rows[ i ];
+		for ( let j = 0; j < row.cells.length; j++ ) {
+			row.cells[j].innerHTML = "";
+		}
+	}
+
 	if ( player.app.level == 1 ) {
 		// First level, place in center
 		player.app.x = Math.floor( app.config.width / 2 );
@@ -223,9 +237,11 @@ function levelBegin () {
 		player.app.y = prng( 0, app.config.height );
 	}
 
+	player.app.isDead = false;
+
 	placeOnGrid( player );
 
-	const enemyCount = app.config.startingEnemies + (app.config.enemyFactor * (player.app.level - 1) );
+	const enemyCount = Math.round( app.config.startingEnemies + (app.config.enemyFactor * (player.app.level - 1) ) );
 
 	const enemies = new Array( enemyCount );
 	app.enemies = enemies;
@@ -245,6 +261,11 @@ function levelBegin () {
 	}
 
 	app.hazards = new Array();
+
+	player.app.attackCount += app.config.attackPerLevel;
+
+
+	updateDisplay();
 
 	roundBegin();
 }
@@ -277,6 +298,27 @@ function turnAction ( entity, action ) {
 		entity.app.y += DIRS[ action ].y;
 
 		placeOnGrid( entity );
+	} else if ( action == "attack" ) {
+		const player = app.player;
+		const enemies = app.enemies;
+
+		player.app.attackCount--;
+
+		for ( let i = 0; i < enemies.length; i++ ) {
+			const enemy = enemies[ i ];
+			const dist = getDistanceFromTo( player, enemy );
+			if ( dist <= app.config.attackDistance ) {
+				removeFromParent( enemy );
+
+				const hazard = createHazard( enemy.app.x, enemy.app.y );
+				app.hazards.push( hazard );
+				placeOnGrid( hazard );
+
+				console.debug( "pke", dist, enemy.app );
+			}
+		}
+
+		cullDead( enemies );
 	}
 
 	turnEnd( entity );
@@ -356,6 +398,8 @@ function roundEnd () {
 
 	cullDead( enemies );
 
+	updateDisplay();
+
 	if ( app.player.app.isDead || app.enemies.length == 0 ) {
 		levelEnd();
 	} else {
@@ -365,7 +409,15 @@ function roundEnd () {
 
 function levelEnd () {
 
-	if ( app.player.app.isDead || app.enemies.length == 0 ) {
+	const player = app.player;
+
+	if ( player.app.isDead ) {
+		player.app.lives--;
+	} else {
+		player.app.level++;
+	}
+
+	if ( player.app.lives < 0 ) {
 		gameEnd();
 	} else {
 		levelBegin();
@@ -374,6 +426,23 @@ function levelEnd () {
 
 function gameEnd () {
 	console.log( "...game end...", app.player.app.isDead ? "Player died" : "Player WINS" );
+}
+
+function updateDisplay () {
+	const hud = app.hud;
+	const player = app.player;
+	const enemies = app.enemies;
+
+	hud.lives.innerHTML = player.app.lives;
+	hud.level.innerHTML = player.app.level;
+	hud.attacks.innerHTML = player.app.attackCount;
+	hud.score.innerHTML = player.app.score;
+	hud.enemies.innerHTML = enemies.length;
+	hud.mana.value = player.app.mana;
+
+	app.controls.attack.disabled = player.app.attackCount < 1;
+
+	if ( app.config.debug ) setDebug( true );
 }
 
 function placeOnGrid ( entity, atX, atY ) {
@@ -434,6 +503,9 @@ function play () {
 	app.config.startingEnemies = 4;
 	app.config.enemyFactor = 1.5;
 
+	app.config.attackPerLevel = 1;
+	app.config.attackDistance = Math.sqrt( Math.pow( 1, 2 ) + Math.pow( 1, 2 ) );
+
 	gameBegin();
 }
 
@@ -457,7 +529,10 @@ function playerMove ( event ) {
 	const dir = getAngualrDirectionFromTo( player.app.x, player.app.y, target.cellIndex, target.parentElement.rowIndex );
 
 	turnAction( app.player, dir );
+}
 
+function playerAttack ( event ) {
+	turnAction( app.player, "attack" );
 }
 
 function handleEvent ( event ) {
@@ -468,6 +543,8 @@ function handleEvent ( event ) {
 		handler = play;
 	} else if ( event.currentTarget == app.grid ) {
 		handler = playerMove;
+	} else if ( event.target == app.controls.attack ) {
+		handler = playerAttack;
 	} else {
 		console.warn( "Unkown event:", event, event.currentTarget );
 	}
@@ -475,6 +552,31 @@ function handleEvent ( event ) {
 	if ( handler != null ) {
 		Promise.resolve( event ).then( handler );
 	}
+}
+
+function setDebug ( debug ) {
+	app.config.debug = debug;
+	for ( let i = 0; i < app.enemies.length; i++ ) {
+		const enemy = app.enemies[ i ];
+		enemy.innerHTML = debug ? enemy.app.id : "";
+	}
+	for ( let i = 0; i < app.hazards.length; i++ ) {
+		const hazard = app.hazards[ i ];
+		hazard.innerHTML = debug ? hazard.app.id : "";
+	}
+}
+
+function cheat () {
+
+	setDebug( true );
+
+	const player = app.player;
+	player.app.attackCount = 100;
+	player.app.mana = 100;
+	player.app.lives = 100;
+	updateDisplay();
+
+	return "Cheater!";
 }
 
 function main ( event ) {
@@ -511,6 +613,7 @@ function main ( event ) {
 	app.hazards = null;
 
 	app.config = new Object();
+	app.config.debug = false;
 	app.config.width = null;
 	app.config.height = null;
 
@@ -521,6 +624,9 @@ function main ( event ) {
 
 	app.config.startingEnemies = null;
 	app.config.enemyFactor = null;
+
+	app.config.attackPerLevel = null;
+	app.config.attackDistance = null;
 
 	app.grid.addEventListener( "click", handleEvent );
 	app.controls.gameAction.addEventListener( "click", handleEvent );

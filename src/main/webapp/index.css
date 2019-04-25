@@ -117,7 +117,7 @@ body {
 }
 
 #ninbot #hud td#lives {
-	color: black;
+	color: white;
 }
 
 #ninbot #hud td#level {
@@ -133,7 +133,7 @@ body {
 }
 
 #ninbot #hud td#attacks {
-	color: black;
+	color: white;
 }
 
 #ninbot #hud #mana {
@@ -221,8 +221,10 @@ body {
 
 #ninbot #grid .enemy {
 	background-image: url( "enemy.png" );
+	color: red;
 }
 
 #ninbot #grid .hazard {
 	background-image: url( "hazard.png" );
+	color: yellow;
 }
