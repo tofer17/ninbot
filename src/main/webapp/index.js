@@ -16,13 +16,7 @@ function createGrid ( grid, width, height ) {
 }
 
 function createPlayer ( config ) {
-	const player = document.createElement( "div" );
-	player.classList.add( "player" );
-	player.classList.add( "entity" );
-
-	player.app = new Object();
-	player.app.x = null;
-	player.app.y = null;
+	const player = createEntity( "player", 0 );
 
 	player.app.lives = config.startingLives;
 	player.app.level = config.startingLevel;
@@ -156,6 +150,7 @@ function createEntity( type, id, atX, atY ) {
 	entity.app.id = id;
 	entity.app.x = atX;
 	entity.app.y = atY;
+	entity.lastAction = "created";
 
 	return entity;
 }
@@ -266,6 +261,8 @@ function levelBegin () {
 	app.hazards = new Array();
 
 	player.app.attackCount += app.config.attackPerLevel;
+	player.app.mana += app.config.mana.perLevel;
+	if ( player.app.mana > app.config.mana.limit ) player.app.mana = app.config.mana.limit;
 
 	app.controls.teleport.classList.remove( "hidden" );
 	app.controls.attack.classList.remove( "hidden" );
@@ -301,12 +298,19 @@ function turnBegin ( entity ) {
 
 function turnAction ( entity, action ) {
 
+	entity.app.lastAction = action;
+
 	if ( action >= 1 && action <= 8 ) {
 
 		entity.app.x += DIRS[ action ].x;
 		entity.app.y += DIRS[ action ].y;
 
 		placeOnGrid( entity );
+	} else if ( entity == app.player && action == 0 ) {
+		entity.app.mana += app.config.mana.resting;
+		if ( entity.app.mana > app.config.mana.limit ) entity.app.mana = app.config.mana.limit;
+	} else if ( entity != app.player && action == 0 ) {
+		console.error( "DEATH BY TP" );
 	} else if ( action == "attack" ) {
 		const player = entity;
 		const enemies = app.enemies;
@@ -330,9 +334,87 @@ function turnAction ( entity, action ) {
 
 		cullDead( enemies );
 	} else if ( action == "teleport" ) {
-		entity.app.x = prng( app.config.width, app.config.height );
-		entity.app.y = prng( app.config.width, app.config.height );
-		placeOnGrid( entity );
+		const player = entity;
+		const enemies = app.enemies;
+		const hazards = app.hazards;
+
+		let notYet = true;
+		let tX, tY;
+
+		while ( notYet ) {
+
+			notYet = false;
+			tX = prng( app.config.width, app.config.height );
+			tY = prng( app.config.width, app.config.height );
+
+			if ( player.app.mana >= app.config.mana.upper ) {
+				// Attempt safe-next-move teleport
+				// A) Is it onto a hazard?
+				for ( let i = 0; i < hazards.length; i++ ) {
+					const hazard = hazards[ i ];
+					const dist = getDistanceFromTo( tX, tY, hazard.app.x, hazard.app.y );
+					if ( dist < 1.0 ) {
+						notYet = true;
+						break;
+					}
+				}
+
+				if ( notYet ) break;
+
+				// B) Is it far enough away from Enemies?
+				for ( let i = 0; i < enemies.length; i++ ) {
+					const enemy = enemies[ i ];
+					const dist = getDistanceFromTo( tX, tY, enemy.app.x, enemy.app.y );
+					if ( dist <= app.config.teleport.safeDistance ) {
+						notYet = true;
+						break;
+					}
+				}
+
+				console.debug( "SNM-TP", !notYet );
+
+			} else if ( player.app.mana >= app.config.mana.lower ) {
+				// Attempt not-onto teleport
+				// A) Is it onto a hazard?
+				for ( let i = 0; i < hazards.length; i++ ) {
+					const hazard = hazards[ i ];
+					const dist = getDistanceFromTo( tX, tY, hazard.app.x, hazard.app.y );
+					if ( dist < 1.0 ) {
+						notYet = true;
+						break;
+					}
+				}
+
+				if ( notYet ) break;
+
+				// B) Is it far enough away from Enemies?
+				for ( let i = 0; i < enemies.length; i++ ) {
+					const enemy = enemies[ i ];
+					const dist = getDistanceFromTo( tX, tY, enemy.app.x, enemy.app.y );
+					if ( dist <= 1.0 ) {
+						notYet = true;
+						break;
+					}
+				}
+
+				console.debug( "NO-TP", !notYet );
+
+			} else {
+				notYet = false;
+
+				console.debug( "R-TP", !notYet );
+			}
+
+			player.app.mana -= app.config.teleport.check;
+		}
+
+		player.app.mana -= app.config.teleport.cost;
+		if ( player.app.mana < 0 ) player.app.mana = 0;
+
+		player.app.x = tX;
+		player.app.y = tY;
+
+		placeOnGrid( player );
 	}
 
 	turnEnd( entity );
@@ -534,6 +616,16 @@ function play () {
 	app.config.hazardCollisionScore = 3;
 	app.config.enemyCollisionScore = 7;
 
+	app.config.teleport.check = 5;
+	app.config.teleport.cost = 5;
+	app.config.teleport.safeDistance = Math.sqrt( Math.pow( 1, 2 ) + Math.pow( 1, 2 ) );
+
+	app.config.mana.limit = 100;
+	app.config.mana.upper = 75;
+	app.config.mana.lower = 10;
+	app.config.mana.resting = 15;
+	app.config.mana.perLevel = 10;
+
 	gameBegin();
 }
 
@@ -677,6 +769,17 @@ function main ( event ) {
 	app.config.attackScore = null;
 	app.config.hazardCollisionScore = null;
 	app.config.enemyCollisionScore = null;
+
+	app.config.teleport = new Object();
+	app.config.teleport.check = null;
+	app.config.teleport.cost = null;
+	app.config.teleport.safeDistance = null;
+
+	app.config.mana = new Object();
+	app.config.mana.limit = null;
+	app.config.mana.upper = null;
+	app.config.mana.lower = null;
+	app.config.mana.resting = null;
 
 	app.grid.addEventListener( "click", handleEvent );
 	app.controls.gameAction.addEventListener( "click", handleEvent );
