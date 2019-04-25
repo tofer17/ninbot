@@ -320,6 +320,7 @@ function turnAction ( entity, action ) {
 				app.hazards.push( hazard );
 				placeOnGrid( hazard );
 
+				player.app.score += app.config.attackScore;
 				console.debug( "pke", dist, enemy.app );
 			}
 		}
@@ -366,6 +367,7 @@ function roundEnd () {
 				hazards.push( hazard );
 				placeOnGrid( hazard );
 
+				player.app.score += app.config.enemyCollisionScore;
 				console.debug( "e2e", enemy.app, enem.app );
 			}
 		}
@@ -378,6 +380,7 @@ function roundEnd () {
 			if ( collided( enemy, hazard ) ) {
 				removeFromParent( enemy );
 
+				player.app.score += app.config.hazardCollisionScore;
 				console.debug( "e2h", enemy.app, hazard.app );
 			}
 		}
@@ -520,6 +523,10 @@ function play () {
 	app.config.attackPerLevel = 1;
 	app.config.attackDistance = Math.sqrt( Math.pow( 1, 2 ) + Math.pow( 1, 2 ) );
 
+	app.config.attackScore = 1;
+	app.config.hazardCollisionScore = 3;
+	app.config.enemyCollisionScore = 7;
+
 	gameBegin();
 }
 
@@ -653,6 +660,10 @@ function main ( event ) {
 
 	app.config.attackPerLevel = null;
 	app.config.attackDistance = null;
+
+	app.config.attackScore = null;
+	app.config.hazardCollisionScore = null;
+	app.config.enemyCollisionScore = null;
 
 	app.grid.addEventListener( "click", handleEvent );
 	app.controls.gameAction.addEventListener( "click", handleEvent );
