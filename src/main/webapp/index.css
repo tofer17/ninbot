@@ -223,3 +223,6 @@ body {
 	background-image: url( "enemy.png" );
 }
 
+#ninbot #grid .hazard {
+	background-image: url( "hazard.png" );
+}

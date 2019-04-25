@@ -162,16 +162,24 @@ function getManhattanDirectionFromTo (fX, fY, tX, tY ) {
 	throw new Error( "Impossible direction." );
 }
 
+function createEntity( type, atX, atY ) {
+	const entity = document.createElement( "div" );
+	entity.classList.add( type );
+	entity.classList.add( "entity" );
+
+	entity.app = new Object();
+	entity.app.x = atX;
+	entity.app.y = atY;
+
+	return entity;
+}
+
 function createEnemy ( atX, atY ) {
-	const enemy = document.createElement( "div" );
-	enemy.classList.add( "enemy" );
-	enemy.classList.add( "entity" );
+	return createEntity( "enemy", atX, atY );
+}
 
-	enemy.app = new Object();
-	enemy.app.x = atX;
-	enemy.app.y = atY;
-
-	return enemy;
+function createHazard ( atX, atY ) {
+	return createEntity( "hazard", atX, atY );
 }
 
 function cullDead ( entities ) {
@@ -187,6 +195,10 @@ function cullDead ( entities ) {
 		entities.splice( index, 1 );
 		index = entities.indexOf( null );
 	}
+}
+
+function collided ( entityA, entityB ) {
+	return entityA.app.x == entityB.app.x && entityA.app.y == entityB.app.y;
 }
 
 /**
@@ -243,6 +255,8 @@ function levelBegin () {
 		}
 	}
 
+	app.hazards = new Array();
+
 	roundBegin();
 }
 
@@ -291,22 +305,54 @@ function turnEnd ( entity ) {
 function roundEnd () {
 	const player = app.player;
 	const enemies = app.enemies;
-
-	console.log( "...check collisions..." );
+	const hazards = app.hazards;
+	const grid = app.grid;
 
 	// Check enemy collisions
 	for ( let i = 0; i < enemies.length; i++ ) {
 		const enemy = enemies[ i ];
+
+		// ...enemy to enemy
 		for ( let j = 0; j < enemies.length; j++ ) {
+
 			if ( i == j ) continue;
+
 			const enem = enemies[ j ];
-			if ( enemy.app.x == enem.app.x && enemy.app.y == enem.app.y ) {
+
+			if ( !enem.parentElement ) continue;
+
+			if ( collided(enemy, enem) ) {
 				removeFromParent( enemy );
 				removeFromParent( enem );
+
+				const hazard = createHazard( enemy.app.x, enemy.app.y );
+				hazards.push( hazard );
+				placeOnGrid( grid, hazard );
 			}
 		}
 
-		if ( enemy.app.x == player.app.x && enemy.app.y == player.app.y ) {
+		if ( !enemy.parentElement ) continue;
+
+		// ...enemy to hazard
+		for ( let j = 0; j < hazards.length; j++ ) {
+			const hazard = hazards[ j ];
+			if ( collided( enemy, hazard ) ) {
+				removeFromParent( enemy );
+			}
+		}
+
+		if ( !enemy.parentElement ) continue;
+
+		// ...enemy to player
+		if ( collided( enemy, player ) ) {
+			player.app.isDead = true;
+		}
+	}
+
+	// Check Player to Hazard collision
+	for ( let i = 0; i < hazards.length; i++ ) {
+		const hazard = hazards[ i ];
+		if ( collided( player, hazard ) ) {
 			player.app.isDead = true;
 		}
 	}
@@ -466,7 +512,7 @@ function main ( event ) {
 	app.controls.play.addEventListener( "click", handleEvent );
 
 	displayIntro();
-	// play();
+	play();
 }
 
 window.addEventListener( "load", main );
