@@ -283,8 +283,20 @@ function levelBegin () {
 	app.buffs = buffs;
 
 	// Attack Buffs
-	if ( player.app.level == 1 || prng() <= app.config.attackBuff.chance ) {
-		const buff = createBuff( "attackBuff", prng( 0, app.config.width), prng( 0, app.config.height) );
+	if ( player.app.level == 1 || ( player.app.level % 17 == 0 ) || prng() <= app.config.attackBuff.chance ) {
+
+		const howMany = player.app.level % 17 == 0 ? 17 : ( prng() <= 0.2 ? 2 : 1 );
+
+		for ( let i = 0; i < howMany; i++ ) {
+			const buff = createBuff( "attackBuff", prng( 0, app.config.width), prng( 0, app.config.height) );
+			buffs.push( buff );
+			placeOnGrid( buff );
+		}
+	}
+
+	// Life buffs
+	if ( prng() <= app.config.lifeBuff.chance && player.app.level > 1 ) {
+		const buff = createBuff( "lifeBuff", Math.round( prng( 0, app.config.width, 1.0 ) ), Math.round( prng( 0, app.config.height, 1.0 ) ) );
 		buffs.push( buff );
 		placeOnGrid( buff );
 	}
@@ -530,8 +542,13 @@ function roundEnd () {
 	for ( let i = 0; i < buffs.length; i++ ) {
 		const buff = buffs[ i ];
 		if ( collided( player, buff ) ) {
-			const amt = Math.round( prng( app.config.attackBuff.min, app.config.attackBuff.max, app.config.attackBuff.skew ) );
-			player.app.attackCount += amt;
+			if ( buff.classList.contains( "attackBuff" ) ) {
+				const amt = Math.round( prng( app.config.attackBuff.min, app.config.attackBuff.max, app.config.attackBuff.skew ) );
+				player.app.attackCount += amt;
+			} else if ( buff.classList.contains( "lifeBuff" ) ) {
+				const amt = Math.round( prng( app.config.lifeBuff.min, app.config.lifeBuff.max, app.config.lifeBuff.skew ) );
+				player.app.lives += amt;
+			}
 
 			console.debug( "p2b", player.app, buff.app );
 			removeFromParent( buff );
@@ -685,6 +702,11 @@ function play () {
 	app.config.attackBuff.min = 2;
 	app.config.attackBuff.max = 5;
 	app.config.attackBuff.skew = 1.17;
+
+	app.config.lifeBuff.chance = 0.2;
+	app.config.lifeBuff.min = 1;
+	app.config.lifeBuff.max = 2;
+	app.config.lifeBuff.skew = 2.0;
 
 	gameBegin();
 }
@@ -846,6 +868,13 @@ function main ( event ) {
 	app.config.attackBuff.min = null;
 	app.config.attackBuff.max = null;
 	app.config.attackBuff.skew = null;
+
+	app.config.lifeBuff = new Object();
+	app.config.lifeBuff.chance = null;
+	app.config.lifeBuff.min = null;
+	app.config.lifeBuff.max = null;
+	app.config.lifeBuff.skew = null;
+
 
 	app.grid.addEventListener( "click", handleEvent );
 	app.controls.gameAction.addEventListener( "click", handleEvent );

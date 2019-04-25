@@ -233,3 +233,8 @@ body {
 	background-image: url( "attackBuff.png" );
 	color: green;
 }
+
+#ninbot #grid .lifeBuff {
+	background-image: url( "lifeBuff.png" );
+	color: green;
+}
