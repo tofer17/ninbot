@@ -61,27 +61,6 @@ function removeFromParent ( entity ) {
 	if ( entity.parentElement ) entity.parentElement.removeChild( entity );
 }
 
-function placeOnGrid ( grid, entity, atX, atY ) {
-	removeFromParent( entity );
-
-	if ( atX == null ) {
-		atX = entity.app.x;
-	} else {
-		entity.app.x = atX;
-	}
-
-	if ( atY == null ) {
-		atY = entity.app.y;
-	} else {
-		entity.app.y = atY;
-	}
-
-	const cell = grid.rows[ atY ].cells[ atX ];
-	cell.appendChild( entity );
-
-	return cell;
-}
-
 const DIRS = new Array();
 DIRS[0] = {x: 0, y: 0}; // --
 DIRS[1] = {x:-1, y:-1}; // NW
@@ -162,24 +141,34 @@ function getManhattanDirectionFromTo (fX, fY, tX, tY ) {
 	throw new Error( "Impossible direction." );
 }
 
-function createEntity( type, atX, atY ) {
+function createEntity( type, id, atX, atY ) {
 	const entity = document.createElement( "div" );
 	entity.classList.add( type );
 	entity.classList.add( "entity" );
 
 	entity.app = new Object();
+	entity.app.id = id;
 	entity.app.x = atX;
 	entity.app.y = atY;
 
 	return entity;
 }
 
-function createEnemy ( atX, atY ) {
-	return createEntity( "enemy", atX, atY );
+function* ids() {
+	var index = 0;
+	while ( index < index + 1 ) {
+		yield index++;
+	}
 }
 
+const enemyIds = ids();
+function createEnemy ( atX, atY ) {
+	return createEntity( "enemy", enemyIds.next().value, atX, atY );
+}
+
+const hazardIds = ids();
 function createHazard ( atX, atY ) {
-	return createEntity( "hazard", atX, atY );
+	return createEntity( "hazard", hazardIds.next().value, atX, atY );
 }
 
 function cullDead ( entities ) {
@@ -234,7 +223,7 @@ function levelBegin () {
 		player.app.y = prng( 0, app.config.height );
 	}
 
-	placeOnGrid( grid, player );
+	placeOnGrid( player );
 
 	const enemyCount = app.config.startingEnemies + (app.config.enemyFactor * (player.app.level - 1) );
 
@@ -251,7 +240,7 @@ function levelBegin () {
 		} else {
 			const enemy = createEnemy( eX, eY );
 			enemies[ i ] = enemy;
-			placeOnGrid( grid, enemy );
+			placeOnGrid( enemy );
 		}
 	}
 
@@ -287,7 +276,7 @@ function turnAction ( entity, action ) {
 		entity.app.x += DIRS[ action ].x;
 		entity.app.y += DIRS[ action ].y;
 
-		placeOnGrid( app.grid, entity );
+		placeOnGrid( entity );
 	}
 
 	turnEnd( entity );
@@ -327,7 +316,9 @@ function roundEnd () {
 
 				const hazard = createHazard( enemy.app.x, enemy.app.y );
 				hazards.push( hazard );
-				placeOnGrid( grid, hazard );
+				placeOnGrid( hazard );
+
+				console.debug( "e2e", enemy.app, enem.app );
 			}
 		}
 
@@ -338,6 +329,8 @@ function roundEnd () {
 			const hazard = hazards[ j ];
 			if ( collided( enemy, hazard ) ) {
 				removeFromParent( enemy );
+
+				console.debug( "e2h", enemy.app, hazard.app );
 			}
 		}
 
@@ -346,6 +339,8 @@ function roundEnd () {
 		// ...enemy to player
 		if ( collided( enemy, player ) ) {
 			player.app.isDead = true;
+
+			console.debug( "e2p", enemy.app, player.app );
 		}
 	}
 
@@ -354,6 +349,8 @@ function roundEnd () {
 		const hazard = hazards[ i ];
 		if ( collided( player, hazard ) ) {
 			player.app.isDead = true;
+
+			console.debug( "p2h", player.app, hazard.app );
 		}
 	}
 
@@ -377,6 +374,27 @@ function levelEnd () {
 
 function gameEnd () {
 	console.log( "...game end...", app.player.app.isDead ? "Player died" : "Player WINS" );
+}
+
+function placeOnGrid ( entity, atX, atY ) {
+	removeFromParent( entity );
+
+	if ( atX == null ) {
+		atX = entity.app.x;
+	} else {
+		entity.app.x = atX;
+	}
+
+	if ( atY == null ) {
+		atY = entity.app.y;
+	} else {
+		entity.app.y = atY;
+	}
+
+	const cell = app.grid.rows[ atY ].cells[ atX ];
+	cell.appendChild( entity );
+
+	return cell;
 }
 
 function displayIntro () {
