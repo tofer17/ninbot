@@ -228,3 +228,8 @@ body {
 	background-image: url( "hazard.png" );
 	color: yellow;
 }
+
+#ninbot #grid .attackBuff {
+	background-image: url( "attackBuff.png" );
+	color: green;
+}

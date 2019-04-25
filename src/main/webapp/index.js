@@ -46,8 +46,24 @@ function prng ( min, max, skew ) {
 		return Math.floor( ( Math.random() * max - min ) + min );
 	} else {
 		// Return a skewed normal random number [min..max)
-		console.warn( "BM PRNG function not yet implemented" );
-		return prng( min, max );
+
+	    let u = 0;
+	    let v = 0;
+
+	    while( u == 0 ) u = Math.random(); // Converting [0,1) to (0,1)
+	    while( v == 0 ) v = Math.random();
+
+	    let num = Math.sqrt( -2.0 * Math.log( u ) ) * Math.cos( 2.0 * Math.PI * v );
+
+	    num = num / 10.0 + 0.5; // Translate to 0 -> 1
+	    if ( num > 1 || num < 0 ) num = prng( min, max, skew ); // resample between 0 and 1 if out of range
+	    num = Math.pow( num, skew ); // Skew
+	    num *= max - min; // Stretch to fill range
+	    num += min; // offset to min
+	    return num;
+
+		// console.warn( "BM PRNG function not yet implemented" );
+		// return prng( min, max );
 	}
 }
 
@@ -172,6 +188,11 @@ function createHazard ( atX, atY ) {
 	return createEntity( "hazard", hazardIds.next().value, atX, atY );
 }
 
+const buffIds = ids();
+function createBuff ( type, atX, atY ) {
+	return createEntity( type, buffIds.next().value, atX, atY );
+}
+
 function cullDead ( entities ) {
 	for ( let i = 0; i < entities.length; i++ ) {
 		if ( ! entities[ i ].parentElement ) {
@@ -256,6 +277,16 @@ function levelBegin () {
 			enemies[ i ] = enemy;
 			placeOnGrid( enemy );
 		}
+	}
+
+	const buffs = new Array();
+	app.buffs = buffs;
+
+	// Attack Buffs
+	if ( player.app.level == 1 || prng() <= app.config.attackBuff.chance ) {
+		const buff = createBuff( "attackBuff", prng( 0, app.config.width), prng( 0, app.config.height) );
+		buffs.push( buff );
+		placeOnGrid( buff );
 	}
 
 	app.hazards = new Array();
@@ -433,6 +464,7 @@ function roundEnd () {
 	const player = app.player;
 	const enemies = app.enemies;
 	const hazards = app.hazards;
+	const buffs = app.buffs;
 	const grid = app.grid;
 
 	// Check enemy collisions
@@ -476,6 +508,15 @@ function roundEnd () {
 
 		if ( !enemy.parentElement ) continue;
 
+		// ...enemy to buff
+		for ( let i = 0; i < buffs.length; i++ ) {
+			const buff = buffs[ i ];
+			if ( collided( enemy, buff ) ) {
+				removeFromParent( buff );
+				console.debug( "e2b", enemy.app, buff.app );
+			}
+		}
+
 		// ...enemy to player
 		if ( collided( enemy, player ) ) {
 			player.app.isDead = true;
@@ -484,7 +525,20 @@ function roundEnd () {
 		}
 	}
 
-	// Check Player to Hazard collision
+	// Check Player collisions
+	// ...Player to buff
+	for ( let i = 0; i < buffs.length; i++ ) {
+		const buff = buffs[ i ];
+		if ( collided( player, buff ) ) {
+			const amt = Math.round( prng( app.config.attackBuff.min, app.config.attackBuff.max, app.config.attackBuff.skew ) );
+			player.app.attackCount += amt;
+
+			console.debug( "p2b", player.app, buff.app );
+			removeFromParent( buff );
+		}
+	}
+
+	// ...Player to hazard
 	for ( let i = 0; i < hazards.length; i++ ) {
 		const hazard = hazards[ i ];
 		if ( collided( player, hazard ) ) {
@@ -495,6 +549,7 @@ function roundEnd () {
 	}
 
 	cullDead( enemies );
+	cullDead( buffs );
 
 	updateDisplay();
 
@@ -625,6 +680,11 @@ function play () {
 	app.config.mana.lower = 10;
 	app.config.mana.resting = 15;
 	app.config.mana.perLevel = 10;
+
+	app.config.attackBuff.chance = 0.4;
+	app.config.attackBuff.min = 2;
+	app.config.attackBuff.max = 5;
+	app.config.attackBuff.skew = 1.17;
 
 	gameBegin();
 }
@@ -780,6 +840,12 @@ function main ( event ) {
 	app.config.mana.upper = null;
 	app.config.mana.lower = null;
 	app.config.mana.resting = null;
+
+	app.config.attackBuff = new Object();
+	app.config.attackBuff.chance = null;
+	app.config.attackBuff.min = null;
+	app.config.attackBuff.max = null;
+	app.config.attackBuff.skew = null;
 
 	app.grid.addEventListener( "click", handleEvent );
 	app.controls.gameAction.addEventListener( "click", handleEvent );
