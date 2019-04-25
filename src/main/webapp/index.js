@@ -82,8 +82,19 @@ function placeOnGrid ( grid, entity, atX, atY ) {
 	return cell;
 }
 
+const DIRS = new Array();
+DIRS[0] = {x: 0, y: 0}; // --
+DIRS[1] = {x:-1, y:-1}; // NW
+DIRS[2] = {x: 0, y:-1}; // N
+DIRS[3] = {x: 1, y:-1}; // NE
+DIRS[4] = {x: 1, y: 0}; // E
+DIRS[5] = {x: 1, y: 1}; // SE
+DIRS[6] = {x: 0, y: 1}; // S
+DIRS[7] = {x:-1, y: 1}; // SW
+DIRS[8] = {x:-1, y: 0}; // W
+
 /**
- * Computes a cardinal direction "from" fX/fY "towards" tX/tY. If only fX/fY are supplied then it assumes fX/fY have
+ * Computes an angular direction "from" fX/fY "towards" tX/tY. If only fX/fY are supplied then it assumes fX/fY have
  * been translated. fX and fY can also be "entities"
  *
  * @param fX
@@ -92,15 +103,11 @@ function placeOnGrid ( grid, entity, atX, atY ) {
  * @param tY
  * @returns A direction 0 = NONE, 1 = NW, 2 = N... 8 = E.
  */
-function getDirectionFromTo ( fX, fY, tX, tY ) {
+function getAngualrDirectionFromTo ( fX, fY, tX, tY ) {
 
 	if ( fX.app ) {
 		// Getting passed in entities...
-		tX = fY.app.x;
-		tY = fY.app.y;
-
-		fY = fX.app.y
-		fX = fX.app.x
+		return getAngualrDirectionFromTo( fX.app.x, fX.app.y, fY.app.x, fY.app.y );
 	}
 
 	tX = tX != null ? tX - fX : fX;
@@ -113,16 +120,47 @@ function getDirectionFromTo ( fX, fY, tX, tY ) {
 	return dir >= 0 ? ( dir + 1) : 8;
 }
 
-const DIRS = new Array();
-DIRS[0] = {x: 0, y: 0}; // --
-DIRS[1] = {x:-1, y:-1}; // NW
-DIRS[2] = {x: 0, y:-1}; // N
-DIRS[3] = {x: 1, y:-1}; // NE
-DIRS[4] = {x: 1, y: 0}; // E
-DIRS[5] = {x: 1, y: 1}; // SE
-DIRS[6] = {x: 0, y: 1}; // S
-DIRS[7] = {x:-1, y: 1}; // SW
-DIRS[8] = {x:-1, y: 0}; // W
+/**
+ * Computes a "Manhattan" direction "from" fX/fY "towards" tX/tY. If only fX/fY are supplied then it assumes fX/fY have
+ * been translated. fX and fY can also be "entities"
+ *
+ * @param fX
+ * @param fY
+ * @param tX
+ * @param tY
+ * @returns A direction 0 = NONE, 1 = NW, 2 = N... 8 = E.
+ */
+function getManhattanDirectionFromTo (fX, fY, tX, tY ) {
+
+	if ( fX.app ) {
+		// Getting passed entities...
+		return getManhattanDirectionFromTo( fX.app.x, fX.app.y, fY.app.x, fY.app.y );
+	}
+
+	let x, y;
+
+	if ( fX == tX ) {
+		x = 0;
+	} else if ( fX < tX ) {
+		x = 1;
+	} else {
+		x = -1;
+	}
+
+	if ( fY == tY ) {
+		y = 0;
+	} else if ( fY < tY ) {
+		y = 1;
+	} else {
+		y = -1;
+	}
+
+	for ( let i = 0; i < DIRS.length; i++ ) {
+		if ( DIRS[i].x == x && DIRS[i].y == y ) return i;
+	}
+
+	throw new Error( "Impossible direction." );
+}
 
 function createEnemy ( atX, atY ) {
 	const enemy = document.createElement( "div" );
@@ -133,52 +171,12 @@ function createEnemy ( atX, atY ) {
 	enemy.app.x = atX;
 	enemy.app.y = atY;
 
-	enemy.app.isDead = false;
-
 	return enemy;
-}
-
-function harmEntity( aggro, victim ) {
-
-	const aggroType = aggro.classList.contains( "enemy" ) ? "enemy" : "?";
-	const victimType = victim.classList.contains( "enemy" ) ? "enemy" : "?";
-
-	console.log( "Aggro", aggro, "harms", victim );
-	// when aggro and victim are each enemy, they both die
-	if ( aggroType == "enemy" && victimType == "enemy" ) {
-		return [ null, null ];
-	}
-
-
-}
-
-function checkCollision ( entity, entities ) {
-	for ( let i = 0; i < entities.length; i++ ) {
-		const ent = entities[ i ];
-		if ( entity == ent ) continue;
-		if ( entity.app.x == ent.app.x && entity.app.y == ent.app.y ) {
-			// Collision!
-			if ( ent.classList.contains( "enemy" ) ) {
-				const result = harmEntity( ent, entity );
-
-				if ( result[1] == null ) {
-					entities[ i ].app.isDead = true;
-				}
-
-				if ( result[0] == null ) {
-					return true;
-				}
-			}
-		}
-	}
-
-	return false;
 }
 
 function cullDead ( entities ) {
 	for ( let i = 0; i < entities.length; i++ ) {
-		if ( entities[ i ].app.isDead ) {
-//removeFromParent(  entities[i]); console.log("dead", entities[i]);
+		if ( ! entities[ i ].parentElement ) {
 			entities[i] = null;
 		}
 	}
@@ -260,7 +258,9 @@ function turnBegin ( entity ) {
 	} else if ( entity == null ) {
 		for ( let i = 0; i < app.enemies.length; i++ ) {
 			const enemy = app.enemies[ i ];
-			turnAction( enemy, getDirectionFromTo( enemy, app.player ) );
+			// Possibly determined by configuration (difficulty and/or an option).
+			// turnAction( enemy, getAngualrDirectionFromTo( enemy, app.player ) );
+			turnAction( enemy, getManhattanDirectionFromTo( enemy, app.player ) );
 		}
 		turnEnd();
 	}
@@ -285,16 +285,6 @@ function turnEnd ( entity ) {
 		turnBegin();
 	} else if ( entity == null ) {
 		roundEnd();
-	} else {
-		//console.log( "...check collisions..." );
-		//entity.isDead = checkCollision( entity, app.enemies );
-
-		//const result = checkCollision( entity, app.enemies );
-		//if ( result == null ) {
-		//	// Entity dies
-		//	x x
-		//}
-
 	}
 }
 
@@ -313,8 +303,6 @@ function roundEnd () {
 			if ( enemy.app.x == enem.app.x && enemy.app.y == enem.app.y ) {
 				removeFromParent( enemy );
 				removeFromParent( enem );
-				enemy.app.isDead = true;
-				enem.app.isDead = true;
 			}
 		}
 
@@ -323,7 +311,6 @@ function roundEnd () {
 		}
 	}
 
-	// Cull dead enemies
 	cullDead( enemies );
 
 	if ( app.player.app.isDead || app.enemies.length == 0 ) {
@@ -403,7 +390,7 @@ function playerMove ( event ) {
 	const tX = target.cellIndex - player.app.x;
 	const tY = target.parentElement.rowIndex - player.app.y;
 
-	const dir = getDirectionFromTo( player.app.x, player.app.y, target.cellIndex, target.parentElement.rowIndex );
+	const dir = getAngualrDirectionFromTo( player.app.x, player.app.y, target.cellIndex, target.parentElement.rowIndex );
 
 	turnAction( app.player, dir );
 
@@ -479,7 +466,7 @@ function main ( event ) {
 	app.controls.play.addEventListener( "click", handleEvent );
 
 	displayIntro();
-	play();
+	// play();
 }
 
 window.addEventListener( "load", main );
