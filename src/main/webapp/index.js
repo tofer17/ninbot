@@ -23,6 +23,7 @@ function createPlayer ( config ) {
 	player.app.score = 0;
 	player.app.attackCount = config.startingAttacks;
 	player.app.mana = config.startingMana;
+	player.app.standing = null;
 
 	player.app.isDead = false;
 
@@ -336,6 +337,7 @@ function levelBegin () {
 	player.app.attackCount += app.config.attackPerLevel;
 	player.app.mana += app.config.mana.perLevel;
 	if ( player.app.mana > app.config.mana.limit ) player.app.mana = app.config.mana.limit;
+	player.app.standing = null;
 
 	app.controls.teleport.classList.remove( "hidden" );
 	app.controls.attack.classList.remove( "hidden" );
@@ -343,6 +345,8 @@ function levelBegin () {
 
 	app.controls.gameAction.classList.add( "hidden" );
 
+	app.controls.teleport.disabled = false;
+	app.controls.lastStand.disabled = false;
 
 	updateDisplay();
 
@@ -400,7 +404,7 @@ function turnAction ( entity, action ) {
 				app.hazards.push( hazard );
 				placeOnGrid( hazard );
 
-				player.app.score += app.config.attackScore;
+				player.app.score += app.config.attackScore * ( player.app.lastStand != null ? app.config.lastStandBonus : 1 );
 				console.debug( "pke", dist, enemy.app );
 			}
 		}
@@ -496,6 +500,12 @@ function turnAction ( entity, action ) {
 function turnEnd ( entity ) {
 
 	if ( entity == app.player ) {
+		const player = entity;
+
+		if ( player.app.standing != null ) {
+			window.clearTimeout( player.app.standing );
+			player.app.standing = window.setTimeout( turnAction, app.config.lastStandTimeout, player, 0 );
+		}
 		turnBegin();
 	} else if ( entity == null ) {
 		roundEnd();
@@ -530,7 +540,7 @@ function roundEnd () {
 				hazards.push( hazard );
 				placeOnGrid( hazard );
 
-				player.app.score += app.config.enemyCollisionScore;
+				player.app.score += app.config.enemyCollisionScore * ( player.app.lastStand != null ? app.config.lastStandBonus : 1 );
 				console.debug( "e2e", enemy.app, enem.app );
 			}
 		}
@@ -545,7 +555,7 @@ function roundEnd () {
 
 				animateDeath( hazard );
 
-				player.app.score += app.config.hazardCollisionScore;
+				player.app.score += app.config.hazardCollisionScore * ( player.app.lastStand != null ? app.config.lastStandBonus : 1 );
 				console.debug( "e2h", enemy.app, hazard.app );
 			}
 		}
@@ -612,6 +622,10 @@ function roundEnd () {
 function levelEnd () {
 
 	const player = app.player;
+
+	if ( player.app.standing != null ) {
+		window.clearTimeout( player.app.standing );
+	}
 
 	if ( player.app.isDead ) {
 		player.app.lives--;
@@ -740,13 +754,16 @@ function play () {
 	app.config.lifeBuff.max = 2;
 	app.config.lifeBuff.skew = 2.0;
 
+	app.config.lastStandTimeout = 700;
+	app.config.lastStandBonus = 2;
+
 	gameBegin();
 }
 
 function playerMove ( event ) {
 	const player = app.player;
 
-	if ( player.app.isDead ) return;
+	if ( player.app.isDead || player.app.standing != null ) return;
 
 	let target = event.target;
 
@@ -783,6 +800,12 @@ function playerTeleport ( event ) {
 	turnAction( app.player, "teleport" );
 }
 
+function playerStands ( event ) {
+	app.controls.teleport.disabled = true;
+	app.controls.lastStand.disabled = true;
+	app.player.app.standing = window.setTimeout( turnAction, 0, app.player, 0 );
+}
+
 function handleEvent ( event ) {
 
 	let handler = null;
@@ -797,6 +820,8 @@ function handleEvent ( event ) {
 		handler = gameAction;
 	} else if ( event.target == app.controls.teleport ) {
 		handler = playerTeleport;
+	} else if ( event.target == app.controls.lastStand ) {
+		handler = playerStands;
 	} else {
 		console.warn( "Unkown event:", event, event.currentTarget );
 	}
@@ -907,6 +932,8 @@ function main ( event ) {
 	app.config.lifeBuff.max = null;
 	app.config.lifeBuff.skew = null;
 
+	app.config.lastStandTimeout = null;
+	app.config.lastStandBonus = null;
 
 	app.grid.addEventListener( "click", handleEvent );
 	app.controls.gameAction.addEventListener( "click", handleEvent );
