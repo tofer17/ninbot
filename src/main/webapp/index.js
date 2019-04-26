@@ -492,8 +492,8 @@ function turnAction ( entity, action ) {
 		while ( notYet ) {
 
 			notYet = false;
-			tX = prng( app.config.width, app.config.height );
-			tY = prng( app.config.width, app.config.height );
+			tX = prng( 0, app.config.height );
+			tY = prng( 0, app.config.height );
 
 			if ( player.app.mana >= app.config.mana.upper ) {
 				// Attempt safe-next-move teleport
