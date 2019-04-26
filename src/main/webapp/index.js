@@ -339,9 +339,10 @@ function levelBegin () {
 	const maxBosses = 1 + Math.floor( player.app.level * app.config.boss.perLevelFactor );
 
 	for ( let i = 0; i < maxBosses; i++ ) {
+
 		const dieRoll = prng( 0.0, 99.0, player.app.level / maxBosses );
 		const chance = player.app.level * app.config.boss.perLevelFactor * app.config.boss.chance;
-		console.log( "DR:"+i+" of "+maxBosses, player.app.level, dieRoll, chance, dieRoll <= chance );
+
 		if ( dieRoll <= chance ) {
 
 			let bX = Math.floor( prng() * 4.0 );
@@ -813,6 +814,35 @@ function levelEnd () {
 }
 
 function gameEnd () {
+
+	const player = app.player;
+
+	let setRecord = false;
+	for ( let i = 0; i < app.highScores.length; i++ ) {
+		if ( player.app.score >= app.highScores[ i ].score ) {
+			setRecord = true;
+		}
+	}
+
+	if ( setRecord ) {
+		const highScore = new Object();
+
+		highScore.player = window.prompt( "High score! Please enter your name" );
+		if ( highScore.player == null || highScore.player == "" ) highScore.player = "-?-";
+		highScore.score = app.player.app.score;
+		highScore.time = Date.now();
+		highScore.level = app.player.app.level;
+
+		app.highScores.push( highScore );
+		app.highScores.sort( highScoreSort );
+
+		while ( app.highScores.length > 5 ) app.highScores.pop();
+
+		for ( let i = 0; i < app.highScores.length; i++ ) {
+			window.localStorage.setItem( "high.score." + i, btoa( JSON.stringify( app.highScores[ i ] ) ) );
+		}
+	}
+
 	displayIntro();
 }
 
@@ -854,7 +884,69 @@ function placeOnGrid ( entity, atX, atY ) {
 	return cell;
 }
 
+function highScoreSort ( s1, s2 ) {
+	if ( s1.score > s2.score ) return -1;
+	if ( s2.score > s1.score ) return 1;
+	if ( s1.time > s2.time ) return 1;
+	if ( s2.time > s1.time ) return -1;
+	if ( s2.player > s1.player ) return 1;
+	if ( s1.player > s2.player ) return -1;
+	return 0;
+}
+
 function displayIntro () {
+
+	const highScores = new Array( 5 );
+	app.highScores = highScores;
+	const DEF_PLAYERS = [ "Bella", "Tsunami", "Diana", "Anika", "Chris" ];
+
+	for ( let i = 0; i < highScores.length; i++ ) {
+		const rawHighScore = window.localStorage.getItem( "high.score." + i );
+		const highScore = new Object();
+		highScore.player = DEF_PLAYERS[ i ];
+		highScore.score = ( i + 1) * 17;
+		highScore.level = i + 1;
+		highScore.time = Date.now() - ( i * 86400017 );
+
+		if ( rawHighScore != null ) {
+			const h = JSON.parse( atob( rawHighScore ) );
+			highScore.player = h.player;
+			highScore.score = h.score;
+			highScore.level = h.level;
+			highScore.time = h.time;
+		} else {
+			window.localStorage.setItem( "high.score." + i, btoa( JSON.stringify( highScore ) ) );
+		}
+
+		highScores[ i ] = highScore;
+	}
+
+	// Should be sorted already
+	highScores.sort( highScoreSort );
+
+	const hst = app.intro.hst;
+	hst.innerHTML = "";
+	for ( let i = 0; i < highScores.length; i++ ) {
+		const highScore = highScores[ i ];
+		const tr = hst.insertRow();
+		let td;
+
+		td = tr.insertCell();
+		td.innerHTML = highScore.player;
+
+		td = tr.insertCell();
+		td.innerHTML = highScore.score;
+
+		td = tr.insertCell();
+		td.innerHTML = "Level " + highScore.level;
+
+		td = tr.insertCell();
+		const d = new Date( highScore.time );
+		td.innerHTML = ( d.getMonth() + 1 ) + "/" + d.getDate() + "/" + d.getFullYear();
+
+
+
+	}
 
 	app.intro.classList.remove( "hidden" );
 	app.game.classList.add( "dim" );
@@ -1052,7 +1144,7 @@ function main ( event ) {
 	window.app = new Object();
 
 	app.intro = document.querySelector( "#ninbot #intro" );
-	app.intro.hst = app.intro.querySelector( "hst" );
+	app.intro.hst = app.intro.querySelector( "#hst" );
 
 	app.game = document.querySelector( "#ninbot #game" );
 
@@ -1091,7 +1183,7 @@ function main ( event ) {
 	app.controls.play.addEventListener( "click", handleEvent );
 
 	displayIntro();
-	play();
+	//play();
 }
 
 window.addEventListener( "load", main );
