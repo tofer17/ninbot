@@ -44,7 +44,7 @@ function prng ( min, max, skew ) {
 		return Math.random();
 	} else if ( skew == null ) {
 		// return a uniform random integer [min..max)
-		return Math.floor( ( Math.random() * max - min ) + min );
+		return Math.floor( ( Math.random() * ( max - min ) ) + min );
 	} else {
 		// Return a skewed normal random number [min..max)
 
@@ -184,6 +184,10 @@ function createEnemy ( atX, atY ) {
 	return createEntity( "enemy", enemyIds.next().value, atX, atY );
 }
 
+function createBoss ( atX, atY ) {
+	return createEntity( "boss", enemyIds.next().value * -1, atX, atY );
+}
+
 const hazardIds = ids();
 function createHazard ( atX, atY ) {
 	const hazard = createEntity( "hazard", hazardIds.next().value, atX, atY );
@@ -255,6 +259,11 @@ function animateText ( text, atEntity ) {
 	startAnimation( textNode, "text_anim" );
 }
 
+function isBoss ( enemy ) {
+	return enemy.classList.contains( "boss" );
+}
+
+
 /**
  * Begins Game: create the grid and player.
  *
@@ -294,9 +303,13 @@ function levelBegin () {
 		player.app.x = Math.floor( app.config.width / 2 );
 		player.app.y = Math.floor( app.config.height / 2 );
 	} else {
-		// ...place randomly
-		player.app.x = prng( 0, app.config.width );
-		player.app.y = prng( 0, app.config.height );
+		// ...place randomly (but not on edges)
+		player.app.x = prng( 1, app.config.width - 1 );
+		player.app.y = prng( 1, app.config.height - 1 );
+
+		if ( player.app.x == 0 || player.app.y == 0 || player.app.x == app.config.width-1|| player.app.y == app.config.height-1) {
+			console.error("Invalid starting coords", player.app);
+		}
 	}
 
 	player.app.isDead = false;
@@ -320,6 +333,40 @@ function levelBegin () {
 			const enemy = createEnemy( eX, eY );
 			enemies[ i ] = enemy;
 			placeOnGrid( enemy );
+		}
+	}
+
+	const maxBosses = 1 + Math.floor( player.app.level * app.config.boss.perLevelFactor );
+
+	for ( let i = 0; i < maxBosses; i++ ) {
+		const dieRoll = prng( 0.0, 99.0, player.app.level / maxBosses );
+		const chance = player.app.level * app.config.boss.perLevelFactor * app.config.boss.chance;
+		console.log( "DR:"+i+" of "+maxBosses, player.app.level, dieRoll, chance, dieRoll <= chance );
+		if ( dieRoll <= chance ) {
+
+			let bX = Math.floor( prng() * 4.0 );
+			let bY;
+			if ( bX == 0 ) {
+				// North
+				bX = prng( 0, app.config.width );
+				bY = 0;
+			} else if ( bX == 1 ) {
+				// East
+				bX = app.config.width - 1;
+				bY = prng( 0, app.config.height );
+			} else if ( bX == 2 ) {
+				// South
+				bX = prng( 0, app.config.width );
+				bY = app.config.height - 1;
+			} else {
+				// West
+				bX = 0;
+				bY = prng( 0, app.config.height );
+			}
+
+			const boss = createBoss( bX, bY );
+			enemies.push( boss );
+			placeOnGrid( boss );
 		}
 	}
 
@@ -364,6 +411,7 @@ function levelBegin () {
 	updateDisplay();
 
 	roundBegin();
+
 }
 
 function roundBegin () {
@@ -378,9 +426,13 @@ function turnBegin ( entity ) {
 	} else if ( entity == null ) {
 		for ( let i = 0; i < app.enemies.length; i++ ) {
 			const enemy = app.enemies[ i ];
-			// Possibly determined by configuration (difficulty and/or an option).
-			// turnAction( enemy, getAngualrDirectionFromTo( enemy, app.player ) );
-			turnAction( enemy, getManhattanDirectionFromTo( enemy, app.player ) );
+
+			// Bosses beat to a different drum!
+			if ( isBoss( enemy ) ) {
+				turnAction( enemy, getAngualrDirectionFromTo( enemy, app.player ) );
+			} else {
+				turnAction( enemy, getManhattanDirectionFromTo( enemy, app.player ) );
+			}
 		}
 		turnEnd();
 	}
@@ -409,6 +461,10 @@ function turnAction ( entity, action ) {
 
 		for ( let i = 0; i < enemies.length; i++ ) {
 			const enemy = enemies[ i ];
+
+			// Bosses are unaffected by attack
+			if ( isBoss( enemy ) ) continue;
+
 			const dist = getDistanceFromTo( player, enemy );
 			if ( dist <= app.config.attackDistance ) {
 				removeFromParent( enemy );
@@ -548,17 +604,69 @@ function roundEnd () {
 			if ( !enem.parentElement ) continue;
 
 			if ( collided(enemy, enem) ) {
-				removeFromParent( enemy );
-				removeFromParent( enem );
 
-				const hazard = createHazard( enemy.app.x, enemy.app.y );
-				hazards.push( hazard );
-				placeOnGrid( hazard );
+				if ( isBoss( enemy ) && isBoss( enem ) ) {
+					// Spectacular collision
+					console.debug( "B2B!!", enemy.app, enem.app );
 
-				const score = app.config.enemyCollisionScore * ( player.app.standing != null ? app.config.lastStandBonus : 1 );
-				player.app.score += score;
-				animateText( "+" + score, hazard );
-				console.debug( "e2e", enemy.app, enem.app );
+					removeFromParent( enemy );
+					removeFromParent( enem );
+					const hazard = createHazard( enemy.app.x, enemy.app.y );
+					placeOnGrid( hazard );
+					animateDeath( hazard );
+
+					const score = ( app.config.boss.score * 2 ) * ( player.app.standing != null ? app.config.lastStandBonus : 1 );
+					player.app.score += score;
+					animateText( "+" + score, hazard );
+
+					for ( let k = 0; k < enemies.length; k++ ) {
+						const en = enemies[ k ];
+						if ( en == enemy || en == enem || !en.parentElement ) continue;
+						const dist = getDistanceFromTo( enemy, en );
+						if ( dist <= app.config.boss.explosionRadius ) {
+							removeFromParent( en );
+
+							const hazar = createHazard( en.app.x, en.app.y );
+							app.hazards.push( hazar );
+							placeOnGrid( hazar );
+
+							const score = app.config.attackScore * ( player.app.standing != null ? app.config.lastStandBonus : 1 );
+							player.app.score += score;
+							animateText( "+" + score, hazar );
+							console.debug( "bke", enemy.app, en.app );
+						}
+
+					}
+
+				} else {
+
+					let bossInvolved = false;
+
+					if (!isBoss( enemy ) ) {
+						removeFromParent( enemy );
+					} else {
+						bossInvolved = true;
+					}
+
+					if ( !isBoss( enem) ) {
+						removeFromParent( enem );
+					} else {
+						bossInvolved = true;
+					}
+
+					if ( !bossInvolved ) {
+						const hazard = createHazard( enemy.app.x, enemy.app.y );
+						hazards.push( hazard );
+						placeOnGrid( hazard );
+
+						const score = app.config.enemyCollisionScore * ( player.app.standing != null ? app.config.lastStandBonus : 1 );
+						player.app.score += score;
+						animateText( "+" + score, hazard );
+						console.debug( "e2e", enemy.app, enem.app );
+					} else {
+						console.debug( "b2e", enemy.app, enem.app );
+					}
+				}
 			}
 		}
 
@@ -568,14 +676,21 @@ function roundEnd () {
 		for ( let j = 0; j < hazards.length; j++ ) {
 			const hazard = hazards[ j ];
 			if ( collided( enemy, hazard ) ) {
-				removeFromParent( enemy );
+				if ( !isBoss( enemy ) ) {
+					removeFromParent( enemy );
 
-				animateDeath( hazard );
+					animateDeath( hazard );
 
-				const score = app.config.hazardCollisionScore * ( player.app.standing != null ? app.config.lastStandBonus : 1 );
-				player.app.score += score;
-				animateText( "+" + score, hazard );
-				console.debug( "e2h", enemy.app, hazard.app );
+					const score = app.config.hazardCollisionScore * ( player.app.standing != null ? app.config.lastStandBonus : 1 );
+					player.app.score += score;
+					animateText( "+" + score, hazard );
+					console.debug( "e2h", enemy.app, hazard.app );
+				} else {
+					// ...Boss hit hazard
+					removeFromParent( hazard );
+					animateDeath( enemy );
+					console.debug( "b2h", enemy.app, hazard.app );
+				}
 			}
 		}
 
@@ -629,6 +744,34 @@ function roundEnd () {
 	}
 
 	cullDead( enemies );
+
+	// Final boss check (bosses die if only they are left)
+	let nonBossAlive = false;
+	let haveBosses = false;
+	for ( let i = 0; i < enemies.length; i++ ) {
+		if ( !isBoss( enemies[ i ] ) ) {
+			nonBossAlive = true;
+		} else {
+			haveBosses = true;
+		}
+	}
+
+	if ( haveBosses && ! nonBossAlive ) {
+		// We have nothing but bosses!
+		for ( let i = 0; i < enemies.length; i++ ) {
+			const boss = enemies[ i ];
+			const hazard = createHazard( boss.app.x, boss.app.y );
+			placeOnGrid( hazard );
+			animateDeath( hazard );
+			removeFromParent( boss );
+			const score = app.config.boss.score * ( player.app.standing != null ? app.config.lastStandBonus : 1 );
+			player.app.score += score;
+			animateText( "+" + score, hazard );
+		}
+
+		cullDead( enemies );
+	}
+
 	cullDead( buffs );
 
 	updateDisplay();
@@ -786,7 +929,14 @@ function play () {
 			},
 
 			lastStandTimeout : 700,
-			lastStandBonus : 2
+			lastStandBonus : 2,
+
+			boss : {
+				perLevelFactor : 1.0 / Math.E,
+				chance : 2.9, // Not used in usual way...
+				score : 17,
+				explosionRadius : Math.sqrt( Math.pow( 2, 2 ) + Math.pow( 2, 2 ) )
+			}
 
 		};
 
@@ -879,7 +1029,7 @@ function setDebug ( debug ) {
 
 function cheat () {
 
-	setDebug( true );
+	//setDebug( true );
 
 	const player = app.player;
 	player.app.attackCount = 100;
@@ -888,6 +1038,14 @@ function cheat () {
 	updateDisplay();
 
 	return "Cheater!";
+}
+
+function killAll () {
+	for ( let i = 0; i < app.enemies.length; i++ ) {
+		removeFromParent( app.enemies[ i ] );
+	}
+	cullDead( app.enemies );
+	turnAction( app.player, 0 );
 }
 
 function main ( event ) {

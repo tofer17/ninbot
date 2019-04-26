@@ -223,6 +223,11 @@ body {
 	color: red;
 }
 
+#ninbot #grid .boss {
+	background-image: url( "boss.png" );
+	color: red;
+}
+
 #ninbot #grid .hazard {
 	background-image: url( "hazard.png" );
 	color: yellow;
