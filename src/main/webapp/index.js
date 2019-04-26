@@ -737,46 +737,59 @@ function play () {
 	app.game.classList.remove( "dim" );
 
 	// TODO: Pull these values from intro
-	app.config.width = 21;
-	app.config.height = 21;
 
-	app.config.startingLevel = 1;
-	app.config.startingLives = 3;
-	app.config.startingAttacks = 0;
-	app.config.startingMana = 75;
+	app.config = {
+			width : 21,
+			height : 21,
 
-	app.config.startingEnemies = 4;
-	app.config.enemyFactor = 1.5;
+			startingLevel : 1,
+			startingLives : 3,
+			startingAttacks : 0,
+			startingMana : 75,
 
-	app.config.attackPerLevel = 1;
-	app.config.attackDistance = Math.sqrt( Math.pow( 1, 2 ) + Math.pow( 1, 2 ) );
+			startingEnemies : 4,
+			enemyFactor : 1.5,
 
-	app.config.attackScore = 1;
-	app.config.hazardCollisionScore = 3;
-	app.config.enemyCollisionScore = 7;
+			attackPerLevel : 1,
+			attackDistance : Math.sqrt( Math.pow( 1, 2 ) + Math.pow( 1, 2 ) ),
 
-	app.config.teleport.check = 5;
-	app.config.teleport.cost = 5;
-	app.config.teleport.safeDistance = Math.sqrt( Math.pow( 1, 2 ) + Math.pow( 1, 2 ) );
+			attackScore : 1,
+			hazardCollisionScore : 3,
+			enemyCollisionScore : 7,
 
-	app.config.mana.limit = 100;
-	app.config.mana.upper = 75;
-	app.config.mana.lower = 10;
-	app.config.mana.resting = 15;
-	app.config.mana.perLevel = 10;
+			teleport : {
+				check : 5,
+				cost : 5,
+				safeDistance : Math.sqrt( Math.pow( 1, 2 ) + Math.pow( 1, 2 ) )
+			},
 
-	app.config.attackBuff.chance = 0.4;
-	app.config.attackBuff.min = 2;
-	app.config.attackBuff.max = 5;
-	app.config.attackBuff.skew = 1.17;
+			mana : {
+				limit : 100,
+				upper : 75,
+				lower : 10,
+				resting : 15,
+				perLevel : 10
+			},
 
-	app.config.lifeBuff.chance = 0.2;
-	app.config.lifeBuff.min = 1;
-	app.config.lifeBuff.max = 2;
-	app.config.lifeBuff.skew = 2.0;
+			attackBuff : {
+				chance : 0.4,
+				min : 2,
+				max : 5,
+				skew : 1.17
+			},
 
-	app.config.lastStandTimeout = 700;
-	app.config.lastStandBonus = 2;
+			lifeBuff : {
+				chance : 0.2,
+				min : 1,
+				max : 2,
+				skew : 2.0
+			},
+
+			lastStandTimeout : 700,
+			lastStandBonus : 2
+
+		};
+
 
 	gameBegin();
 }
@@ -910,51 +923,7 @@ function main ( event ) {
 	app.buffs = null;
 	app.hazards = null;
 
-	app.config = new Object();
-	app.config.debug = false;
-	app.config.width = null;
-	app.config.height = null;
-
-	app.config.startingLevel = null;
-	app.config.startingLives = null;
-	app.config.startingAttacks = null;
-	app.config.startingMana = null;
-
-	app.config.startingEnemies = null;
-	app.config.enemyFactor = null;
-
-	app.config.attackPerLevel = null;
-	app.config.attackDistance = null;
-
-	app.config.attackScore = null;
-	app.config.hazardCollisionScore = null;
-	app.config.enemyCollisionScore = null;
-
-	app.config.teleport = new Object();
-	app.config.teleport.check = null;
-	app.config.teleport.cost = null;
-	app.config.teleport.safeDistance = null;
-
-	app.config.mana = new Object();
-	app.config.mana.limit = null;
-	app.config.mana.upper = null;
-	app.config.mana.lower = null;
-	app.config.mana.resting = null;
-
-	app.config.attackBuff = new Object();
-	app.config.attackBuff.chance = null;
-	app.config.attackBuff.min = null;
-	app.config.attackBuff.max = null;
-	app.config.attackBuff.skew = null;
-
-	app.config.lifeBuff = new Object();
-	app.config.lifeBuff.chance = null;
-	app.config.lifeBuff.min = null;
-	app.config.lifeBuff.max = null;
-	app.config.lifeBuff.skew = null;
-
-	app.config.lastStandTimeout = null;
-	app.config.lastStandBonus = null;
+	app.config = null;
 
 	app.grid.addEventListener( "click", handleEvent );
 	app.controls.gameAction.addEventListener( "click", handleEvent );
